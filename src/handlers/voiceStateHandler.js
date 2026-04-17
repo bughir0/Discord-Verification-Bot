@@ -1,4 +1,5 @@
 import { EmbedBuilder } from 'discord.js';
+import { toV2FromEmbedBuilder } from '../utils/embedBuilderV2.js';
 import { getChannelId } from '../utils/configHelper.js';
 import logger from '../utils/logger.js';
 
@@ -156,7 +157,7 @@ export async function handleVoiceStateUpdate(oldState, newState) {
             })
             .setTimestamp();
 
-            await logChannel.send({ embeds: [embed] }).catch(err => {
+            await logChannel.send({ ...toV2FromEmbedBuilder(embed) }).catch(err => {
                 logger.error('Erro ao enviar log de entrada em call', {
                     error: err.message,
                     guildId: guild.id,
@@ -256,7 +257,7 @@ export async function handleVoiceStateUpdate(oldState, newState) {
                 voiceSessions.delete(member.id);
             }
             
-            await logChannel.send({ embeds: [embed] }).catch(err => {
+            await logChannel.send({ ...toV2FromEmbedBuilder(embed) }).catch(err => {
                 logger.error('Erro ao enviar log de saída de call', {
                     error: err.message,
                     guildId: guild.id,
@@ -337,7 +338,7 @@ export async function handleVoiceStateUpdate(oldState, newState) {
             // Limpar sessão
             voiceSessions.delete(member.id);
             
-            await logChannel.send({ embeds: [embed] }).catch(err => {
+            await logChannel.send({ ...toV2FromEmbedBuilder(embed) }).catch(err => {
                 logger.error('Erro ao enviar log de saída de call', {
                     error: err.message,
                     guildId: guild.id,
@@ -429,7 +430,7 @@ export async function handleVoiceStateUpdate(oldState, newState) {
             })
             .setTimestamp();
 
-            await logChannel.send({ embeds: [embed] }).catch(err => {
+            await logChannel.send({ ...toV2FromEmbedBuilder(embed) }).catch(err => {
                 logger.error('Erro ao enviar log de troca de call', {
                     error: err.message,
                     guildId: guild.id,

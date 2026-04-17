@@ -1,10 +1,11 @@
-import { 
-    ModalBuilder, 
-    ActionRowBuilder, 
-    TextInputBuilder, 
-    TextInputStyle, 
-    EmbedBuilder 
+import {
+    ModalBuilder,
+    ActionRowBuilder,
+    TextInputBuilder,
+    TextInputStyle,
+    EmbedBuilder
 } from 'discord.js';
+import { mergeV2WithRows, toV2FromEmbedBuilder } from '../utils/embedBuilderV2.js';
 import { database as db } from '../database/database.js';
 import { getRoleId, getColors } from '../utils/configHelper.js';
 
@@ -48,10 +49,7 @@ async function handleVerificationStart(interaction) {
             })
             .setTimestamp();
         
-        return await interaction.reply({ 
-            embeds: [embed],
-            ephemeral: true 
-        });
+        return await interaction.reply(toV2FromEmbedBuilder(embed, true));
     }
     
     const member = interaction.member;
@@ -91,14 +89,9 @@ async function handleVerificationStart(interaction) {
             .setTimestamp();
 
         if (!interaction.replied && !interaction.deferred) {
-            return interaction.reply({ 
-                embeds: [embed],
-                ephemeral: true 
-            });
+            return interaction.reply(toV2FromEmbedBuilder(embed, true));
         } else {
-            return interaction.editReply({ 
-                embeds: [embed] 
-            });
+            return interaction.editReply(toV2FromEmbedBuilder(embed, true));
         }
     }
     
@@ -127,15 +120,10 @@ async function handleVerificationStart(interaction) {
 
         // First reply to the interaction if not already done
         if (!interaction.replied && !interaction.deferred) {
-            return interaction.reply({ 
-                embeds: [embed],
-                ephemeral: true 
-            }).catch(err => console.error('Error sending already verified message:', err));
+            return interaction.reply(toV2FromEmbedBuilder(embed, true)).catch(err => console.error('Error sending already verified message:', err));
         } else {
             // If already replied or deferred, use editReply
-            return interaction.editReply({ 
-                embeds: [embed] 
-            }).catch(err => console.error('Error updating already verified message:', err));
+            return interaction.editReply(toV2FromEmbedBuilder(embed, true)).catch(err => console.error('Error updating already verified message:', err));
         }
     }
         
@@ -165,23 +153,14 @@ async function handleVerificationStart(interaction) {
         
         // Try to send an error message
         try {
+            const modalErr = new EmbedBuilder()
+                .setColor(colors.danger)
+                .setTitle('❌ Erro')
+                .setDescription('Não foi possível abrir o formulário de verificação. Por favor, tente novamente.');
             if (interaction.replied || interaction.deferred) {
-                await interaction.editReply({
-                    embeds: [{
-                    title: '❌ Erro',
-                    description: 'Não foi possível abrir o formulário de verificação. Por favor, tente novamente.',
-                    color: colors.danger
-                    }]
-                });
+                await interaction.editReply(toV2FromEmbedBuilder(modalErr, true));
             } else {
-                await interaction.reply({
-                    embeds: [{
-                    title: '❌ Erro',
-                    description: 'Não foi possível abrir o formulário de verificação. Por favor, tente novamente.',
-                    color: colors.danger
-                    }],
-                    ephemeral: true
-                });
+                await interaction.reply(toV2FromEmbedBuilder(modalErr, true));
             }
         } catch (replyError) {
             console.error('Failed to send error message:', replyError);
@@ -189,13 +168,11 @@ async function handleVerificationStart(interaction) {
             // Last resort: try to DM the user
             try {
                 if (interaction.member) {
-                    await interaction.member.send({
-                        embeds: [{
-                            title: '❌ Erro na Verificação',
-                            description: 'Ocorreu um erro ao processar sua solicitação de verificação. Por favor, tente novamente mais tarde.',
-                            color: config.colors.danger
-                        }]
-                    });
+                    const dmErr = new EmbedBuilder()
+                        .setColor(colors.danger)
+                        .setTitle('❌ Erro na Verificação')
+                        .setDescription('Ocorreu um erro ao processar sua solicitação de verificação. Por favor, tente novamente mais tarde.');
+                    await interaction.member.send({ ...toV2FromEmbedBuilder(dmErr) });
                 }
             } catch (dmError) {
                 console.error('Failed to send DM:', dmError);

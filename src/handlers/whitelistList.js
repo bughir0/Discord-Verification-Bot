@@ -1,4 +1,6 @@
 import { EmbedBuilder } from 'discord.js';
+import { mergeV2WithRows, toV2FromEmbedBuilder } from '../utils/embedBuilderV2.js';
+
 import { database as db } from '../database/database.js';
 import { getColors } from '../utils/configHelper.js';
 import logger from '../utils/logger.js';
@@ -23,7 +25,7 @@ async function handleWhitelistList(interaction) {
                 })
                 .setTimestamp();
             
-            return await interaction.editReply({ embeds: [embed] });
+            return await interaction.editReply(toV2FromEmbedBuilder(embed, true));
         }
         
         const colors = getColors();
@@ -101,7 +103,7 @@ async function handleWhitelistList(interaction) {
             })
             .setTimestamp();
         
-        await interaction.editReply({ embeds: [embed] });
+        await interaction.editReply(toV2FromEmbedBuilder(embed, true));
         
     } catch (error) {
         logger.error('Erro ao buscar lista de whitelist', {
@@ -122,14 +124,9 @@ async function handleWhitelistList(interaction) {
             .setTimestamp();
             
         if (!interaction.replied && !interaction.deferred) {
-            await interaction.reply({
-                embeds: [errorEmbed],
-                ephemeral: true
-            }).catch(console.error);
+            await interaction.reply(toV2FromEmbedBuilder(errorEmbed, true)).catch(console.error);
         } else if (interaction.deferred) {
-            await interaction.editReply({
-                embeds: [errorEmbed]
-            }).catch(console.error);
+            await interaction.editReply(toV2FromEmbedBuilder(errorEmbed, true)).catch(console.error);
         }
     }
 }

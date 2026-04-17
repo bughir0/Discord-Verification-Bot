@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
+import { toV2FromEmbedBuilder } from '../../utils/embedBuilderV2.js';
 import { getChannelId, getRoleId, getColors, getStaffRoleIds } from '../../utils/configHelper.js';
 import { success, warning, error } from '../../utils/responseUtils.js';
 
@@ -197,6 +198,6 @@ export async function handleConfigValidateCommand(interaction) {
         });
     }
 
-    await interaction.reply({ embeds: [embed], ephemeral: true });
+    await interaction.reply(toV2FromEmbedBuilder(embed, true));
 }
 

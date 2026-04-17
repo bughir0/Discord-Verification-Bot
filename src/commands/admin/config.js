@@ -239,27 +239,21 @@ export async function handleConfigCommand(interaction) {
         // Verificar se já foi respondido
         if (interaction.replied || interaction.deferred) {
             try {
-                return await interaction.followUp({
-                    embeds: [error({
-                        title: 'Erro',
-                        description: 'Ocorreu um erro ao executar este comando.',
-                        ephemeral: true
-                    }).embeds[0]],
+                return await interaction.followUp(error({
+                    title: 'Erro',
+                    description: 'Ocorreu um erro ao executar este comando.',
                     ephemeral: true
-                });
+                }));
             } catch (e) {
                 return;
             }
         }
         
-        return await interaction.reply({
-            embeds: [error({
-                title: 'Erro',
-                description: 'Ocorreu um erro ao executar este comando.',
-                ephemeral: true
-            }).embeds[0]],
+        return await interaction.reply(error({
+            title: 'Erro',
+            description: 'Ocorreu um erro ao executar este comando.',
             ephemeral: true
-        });
+        }));
     }
 }
 

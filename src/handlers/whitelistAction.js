@@ -1,6 +1,8 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { database as db } from '../database/database.js';
 import { getChannelId, getRoleId, getColors, hasStaffRole } from '../utils/configHelper.js';
+import { buildWhitelistStaffMessageV2, toV2FromEmbedBuilder } from '../utils/embedBuilderV2.js';
+import { error as errorResponse } from '../utils/responseUtils.js';
 import logger from '../utils/logger.js';
 import { getMinecraftUUID } from '../utils/minecraftUtils.js';
 import { addToWhitelist } from '../utils/sftpWhitelist.js';
@@ -17,18 +19,12 @@ async function handleWhitelistAction(interaction) {
         
         // Check if user has any staff role BEFORE disabling buttons
         if (!hasStaffRole(interaction.member)) {
-            const embed = new EmbedBuilder()
-                .setColor(getColors().danger)
-                .setTitle('❌ Acesso Negado')
-                .setDescription('Apenas membros da equipe podem realizar esta ação.')
-                .setFooter({ text: 'Whitelist', iconURL: interaction.guild.iconURL() })
-                .setTimestamp();
-
             try {
-                await interaction.reply({
-                    embeds: [embed],
+                await interaction.reply(errorResponse({
+                    title: 'Acesso Negado',
+                    description: 'Apenas membros da equipe podem realizar esta ação.',
                     ephemeral: true
-                });
+                }));
             } catch (error) {
                 if (error.code !== 'InteractionAlreadyReplied') {
                     logger.error('Error sending access denied message in whitelistAction', {
@@ -153,7 +149,7 @@ async function handleWhitelistAction(interaction) {
 
                     const message = await whitelistResultChannel.send({
                         content: member.toString(),
-                        embeds: [denialEmbed]
+                        ...toV2FromEmbedBuilder(denialEmbed)
                     });
 
                     // Deletar a mensagem após 5 minutos
@@ -349,7 +345,7 @@ async function handleWhitelistAction(interaction) {
 
                     const message = await whitelistResultChannel.send({
                         content: `🎉 ${member}`,
-                        embeds: [approvalEmbed]
+                        ...toV2FromEmbedBuilder(approvalEmbed)
                     });
 
                     // Deletar a mensagem após 5 minutos
@@ -383,45 +379,9 @@ async function handleWhitelistAction(interaction) {
             }
         }
         
-        // Atualizar mensagem original
-        const embed = new EmbedBuilder(interaction.message.embeds[0]);
-        const colors = getColors();
-        embed.setColor(isApproval ? colors.success : colors.danger);
-        
         const statusTitle = isApproval ? 'APROVADA' : 'RECUSADA';
-        const statusEmoji = isApproval ? '<a:sucesso:1443149628085244036>' : '<a:erro:1443149642580758569>';
-        embed.setTitle(`${statusEmoji} Whitelist ${statusTitle}`);
-        
-        // Atualizar campo de status
-        const statusText = isApproval ? 'Aprovada' : 'Recusada';
-        
-        // Encontrar e remover o campo de status existente, se houver
-        const fields = embed.data.fields || [];
-        const filteredFields = fields.filter(field => field.name !== '📝 Status da Whitelist' && field.name !== '📝 Status');
-        
-        // Adicionar informações de quem aprovou/recusou
-        filteredFields.push({
-            name: '📝 Status da Whitelist',
-            value: `\`\`\`${isApproval ? '🟢 APROVADA' : '🔴 RECUSADA'} por ${staffMember.username}\`\`\``,
-            inline: false
-        });
-        
-        // Adicionar informações adicionais
-        filteredFields.push({
-            name: '🛠️ Processado por',
-            value: `${staffMember} (${staffMember.tag})`,
-            inline: true
-        });
-        
-        filteredFields.push({
-            name: '⏰ Processado em',
-            value: `<t:${Math.floor(Date.now() / 1000)}:F>`,
-            inline: true
-        });
-        
-        // Atualizar os campos do embed
-        embed.setFields(filteredFields);
-        
+        const platformKey = (whitelistData?.platform || 'java') === 'bedrock' ? 'bedrock' : 'java';
+
         // Enviar log para o canal de whitelist log (wl-mine-log)
         const whitelistLogChannelId = getChannelId(interaction.guild.id, 'whitelistLog');
         const whitelistLogChannel = whitelistLogChannelId ? interaction.guild.channels.cache.get(whitelistLogChannelId) : null;
@@ -517,7 +477,7 @@ async function handleWhitelistAction(interaction) {
                     .setTimestamp();
                     
                 // Enviar mensagem de log (sem auto-deleção)
-                await whitelistLogChannel.send({ embeds: [logEmbed] }).catch(error => {
+                await whitelistLogChannel.send({ ...toV2FromEmbedBuilder(logEmbed) }).catch(error => {
                     logger.error('Erro ao enviar log de whitelist', {
                         error: error.message,
                         guildId: interaction.guild.id,
@@ -548,10 +508,20 @@ async function handleWhitelistAction(interaction) {
                     // Tente editar a mensagem original para remover os botões
                     const message = interaction.message;
                     if (message && message.editable) {
-                        await message.edit({
-                            embeds: [embed],
-                            components: [] // Remove os botões
-                        });
+                        if (member) {
+                            const updatedCard = buildWhitelistStaffMessageV2({
+                                guild: interaction.guild,
+                                member,
+                                minecraftUsername,
+                                platform: platformKey,
+                                status: isApproval ? 'approved' : 'denied',
+                                staffUser: staffMember
+                            });
+                            await message.edit({
+                                ...updatedCard,
+                                components: []
+                            });
+                        }
                         
                         // Agendar exclusão da mensagem do canal de notificações após 1 minuto
                         setTimeout(async () => {

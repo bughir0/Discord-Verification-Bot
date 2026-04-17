@@ -1,4 +1,5 @@
 import { EmbedBuilder } from 'discord.js';
+import { toV2FromEmbedBuilder } from './embedBuilderV2.js';
 import { getChannelId, getColors } from './configHelper.js';
 import logger from './logger.js';
 
@@ -51,7 +52,8 @@ export async function sendLog(guild, channelType, options = {}) {
 
         // Se options.embed foi fornecido, usar ele diretamente
         if (options.embed) {
-            const sendOptions = { embeds: [options.embed] };
+            const e = options.embed instanceof EmbedBuilder ? options.embed : EmbedBuilder.from(options.embed);
+            const sendOptions = { ...toV2FromEmbedBuilder(e) };
             // Adicionar arquivos se existirem
             if (options.files && options.files.length > 0) {
                 // Verificar se tem permissão para anexar arquivos
@@ -97,7 +99,7 @@ export async function sendLog(guild, channelType, options = {}) {
             embed.setTimestamp();
         }
 
-        await logChannel.send({ embeds: [embed] });
+        await logChannel.send({ ...toV2FromEmbedBuilder(embed) });
         return true;
     } catch (error) {
         logger.error(`Erro ao enviar log para ${channelType}`, {

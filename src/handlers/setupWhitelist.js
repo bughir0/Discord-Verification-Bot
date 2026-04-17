@@ -1,4 +1,6 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { mergeV2WithRows, toV2FromEmbedBuilder } from '../utils/embedBuilderV2.js';
+
 import { database as db } from '../database/database.js';
 import { getColors, getChannelId } from '../utils/configHelper.js';
 import logger from '../utils/logger.js';
@@ -72,8 +74,7 @@ async function createWhitelistMessage(interaction) {
         );
 
     return channel.send({
-        embeds: [embed],
-        components: [row]
+        ...mergeV2WithRows(toV2FromEmbedBuilder(embed, true), [row])
     });
 }
 
@@ -98,10 +99,7 @@ async function handleSetupWhitelist(interaction) {
                 .setFooter({ text: 'Permissão Negada', iconURL: interaction.guild.iconURL() })
                 .setTimestamp();
 
-            return await interaction.reply({
-                embeds: [embed],
-                ephemeral: true
-            });
+            return await interaction.reply(toV2FromEmbedBuilder(embed, true));
         }
 
         // Criar embed padrão para mostrar no modal
@@ -223,14 +221,9 @@ async function handleSetupWhitelist(interaction) {
 
         try {
             if (interaction.replied || interaction.deferred) {
-                await interaction.editReply({
-                    embeds: [errorEmbed]
-                });
+                await interaction.editReply(toV2FromEmbedBuilder(errorEmbed, true));
             } else {
-                await interaction.reply({
-                    embeds: [errorEmbed],
-                    ephemeral: true
-                });
+                await interaction.reply(toV2FromEmbedBuilder(errorEmbed, true));
             }
         } catch (replyError) {
             console.error('Erro ao enviar mensagem de erro:', replyError);

@@ -1,4 +1,6 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { mergeV2WithRows, toV2FromEmbedBuilder } from '../utils/embedBuilderV2.js';
+
 import { getColors, getChannelId } from '../utils/configHelper.js';
 import logger from '../utils/logger.js';
 import { createWhitelistMessage } from './setupWhitelist.js';
@@ -25,7 +27,7 @@ export async function handleSetupWhitelistModal(interaction) {
                 .setFooter({ text: 'Erro', iconURL: interaction.guild.iconURL() })
                 .setTimestamp();
 
-            return await interaction.editReply({ embeds: [errorEmbed] });
+            return await interaction.editReply(toV2FromEmbedBuilder(errorEmbed, true));
         }
 
         // Criar embed customizado
@@ -143,8 +145,7 @@ export async function handleSetupWhitelistModal(interaction) {
 
         // Enviar mensagem
         await channel.send({
-            embeds: [embed],
-            components: [row]
+            ...mergeV2WithRows(toV2FromEmbedBuilder(embed, true), [row])
         });
 
         let successDescription = 'Mensagem de whitelist configurada com sucesso!';
@@ -165,9 +166,7 @@ export async function handleSetupWhitelistModal(interaction) {
             .setFooter({ text: 'Configuração', iconURL: interaction.guild.iconURL() })
             .setTimestamp();
 
-        await interaction.editReply({
-            embeds: [successEmbed]
-        });
+        await interaction.editReply(toV2FromEmbedBuilder(successEmbed, true));
 
         logger.info('Mensagem de whitelist configurada via modal', {
             guildId: interaction.guild.id,
@@ -191,14 +190,9 @@ export async function handleSetupWhitelistModal(interaction) {
 
         try {
             if (interaction.replied || interaction.deferred) {
-                await interaction.editReply({
-                    embeds: [errorEmbed]
-                });
+                await interaction.editReply(toV2FromEmbedBuilder(errorEmbed, true));
             } else {
-                await interaction.reply({
-                    embeds: [errorEmbed],
-                    ephemeral: true
-                });
+                await interaction.reply(toV2FromEmbedBuilder(errorEmbed, true));
             }
         } catch (replyError) {
             console.error('Erro ao enviar mensagem de erro:', replyError);

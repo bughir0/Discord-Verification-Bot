@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ChannelType } from 'discord.js';
+import { toV2FromEmbedBuilder } from '../../utils/embedBuilderV2.js';
 import { success, error } from '../../utils/responseUtils.js';
 import logger from '../../utils/logger.js';
 
@@ -12,28 +13,20 @@ export async function handleNukeCommand(interaction) {
     try {
         // Verificar se o comando foi usado em um canal
         if (!interaction.channel) {
-            const errorResponse = error({
+            return await interaction.reply(error({
                 title: 'Erro',
                 description: 'Este comando deve ser usado em um canal.',
                 ephemeral: true
-            });
-            return await interaction.reply({
-                embeds: errorResponse.embeds,
-                ephemeral: true
-            });
+            }));
         }
 
         // Verificar se o usuário tem permissão de administrador
         if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
-            const errorResponse = error({
+            return await interaction.reply(error({
                 title: 'Sem Permissão',
                 description: 'Apenas administradores podem usar este comando.',
                 ephemeral: true
-            });
-            return await interaction.reply({
-                embeds: errorResponse.embeds,
-                ephemeral: true
-            });
+            }));
         }
 
         // Verificar se o bot tem permissões necessárias
@@ -43,15 +36,11 @@ export async function handleNukeCommand(interaction) {
             PermissionFlagsBits.ViewChannel,
             PermissionFlagsBits.SendMessages
         ])) {
-            const errorResponse = error({
+            return await interaction.reply(error({
                 title: 'Sem Permissão',
                 description: 'O bot precisa das permissões: Gerenciar Canais, Ver Canal e Enviar Mensagens.',
                 ephemeral: true
-            });
-            return await interaction.reply({
-                embeds: errorResponse.embeds,
-                ephemeral: true
-            });
+            }));
         }
 
         // Salvar informações do canal atual
@@ -72,28 +61,19 @@ export async function handleNukeCommand(interaction) {
 
         // Verificar se é um canal de texto ou voz
         if (channelType !== ChannelType.GuildText && channelType !== ChannelType.GuildVoice) {
-            const errorResponse = error({
+            return await interaction.reply(error({
                 title: 'Tipo de Canal Inválido',
                 description: 'Este comando só funciona em canais de texto ou voz.',
                 ephemeral: true
-            });
-            return await interaction.reply({
-                embeds: errorResponse.embeds,
-                ephemeral: true
-            });
+            }));
         }
 
         // Responder ao usuário antes de deletar o canal
-        const successResponse = success({
+        await interaction.reply(success({
             title: '💣 Nuke Iniciado',
             description: `O canal **${channelName}** será resetado em instantes...`,
             ephemeral: true
-        });
-        
-        await interaction.reply({
-            embeds: successResponse.embeds,
-            ephemeral: true
-        });
+        }));
 
         logger.info('💣 Comando /nuke executado', {
             channelId: channel.id,
@@ -184,7 +164,7 @@ export async function handleNukeCommand(interaction) {
 
         // Enviar mensagem no novo canal
         const nukeMessage = await newChannel.send({
-            embeds: [adminEmbed]
+            ...toV2FromEmbedBuilder(adminEmbed)
         });
 
         // Deletar a mensagem após 1 minuto (60000ms)
@@ -222,15 +202,11 @@ export async function handleNukeCommand(interaction) {
         // Tentar responder se ainda não foi respondido
         if (!interaction.replied && !interaction.deferred) {
             try {
-                const errorResponse = error({
+                await interaction.reply(error({
                     title: 'Erro',
                     description: `Ocorreu um erro ao resetar o canal: ${err.message}`,
                     ephemeral: true
-                });
-                await interaction.reply({
-                    embeds: errorResponse.embeds,
-                    ephemeral: true
-                });
+                }));
             } catch (replyError) {
                 logger.error('Erro ao enviar mensagem de erro', {
                     error: replyError.message

@@ -1,5 +1,6 @@
 import { EmbedBuilder } from 'discord.js';
-import { getChannelId, getColors } from '../utils/configHelper.js';
+import { toV2FromEmbedBuilder } from './embedBuilderV2.js';
+import { getChannelId, getColors } from './configHelper.js';
 import logger from './logger.js';
 
 /**
@@ -127,7 +128,7 @@ export async function logModerationAction(guild, { action, target, moderator, re
             embed.addFields({ name: '⏱️ Duração', value: duration, inline: true });
         }
 
-        await logChannel.send({ embeds: [embed] });
+        await logChannel.send({ ...toV2FromEmbedBuilder(embed) });
 
         // Registrar no logger com informações detalhadas
         logger.info(`${actionText} registrada no canal de logs`, {

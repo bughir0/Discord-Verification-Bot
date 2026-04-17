@@ -1,4 +1,5 @@
 import { EmbedBuilder } from 'discord.js';
+import { toV2FromEmbedBuilder } from '../utils/embedBuilderV2.js';
 import { getChannelId, getBoostRemovableRoleIds } from '../utils/configHelper.js';
 import logger from '../utils/logger.js';
 import { database as db } from '../database/database.js';
@@ -65,7 +66,7 @@ export async function handleGuildMemberAdd(member) {
             })
             .setTimestamp();
 
-        await logChannel.send({ embeds: [embed] }).catch(err => {
+        await logChannel.send({ ...toV2FromEmbedBuilder(embed) }).catch(err => {
             // Tratar erros de timeout e conexão como warnings, não erros críticos
             const isNetworkError = err.message?.includes('timeout') || 
                                  err.message?.includes('Timeout') || 
@@ -171,7 +172,7 @@ export async function handleGuildMemberUpdate(oldMember, newMember) {
                             })
                             .setTimestamp();
 
-                        await boostLogChannel.send({ embeds: [embed] }).catch(err => {
+                        await boostLogChannel.send({ ...toV2FromEmbedBuilder(embed) }).catch(err => {
                             logger.error('Erro ao enviar log de boost adicionado', {
                                 error: err.message,
                                 guildId: newMember.guild.id,
@@ -254,7 +255,7 @@ export async function handleGuildMemberUpdate(oldMember, newMember) {
                             })
                             .setTimestamp();
 
-                        await boostLogChannel.send({ embeds: [embed] }).catch(err => {
+                        await boostLogChannel.send({ ...toV2FromEmbedBuilder(embed) }).catch(err => {
                             logger.error('Erro ao enviar log de boost removido', {
                                 error: err.message,
                                 guildId: newMember.guild.id,
@@ -331,7 +332,7 @@ export async function handleGuildMemberUpdate(oldMember, newMember) {
                     })
                     .setTimestamp();
 
-                await logChannel.send({ embeds: [embed] }).catch(err => {
+                await logChannel.send({ ...toV2FromEmbedBuilder(embed) }).catch(err => {
                     // Tratar erros de timeout e conexão como warnings, não erros críticos
                     const isNetworkError = err.message?.includes('timeout') || 
                                          err.message?.includes('Timeout') || 
@@ -458,7 +459,7 @@ export async function handleGuildMemberUpdate(oldMember, newMember) {
                 iconURL: newMember.user.displayAvatarURL({ dynamic: true }) 
             });
 
-            await logChannel.send({ embeds: [embed] }).catch(err => {
+            await logChannel.send({ ...toV2FromEmbedBuilder(embed) }).catch(err => {
                 // Tratar erros de timeout e conexão como warnings, não erros críticos
                 const isNetworkError = err.message?.includes('timeout') || 
                                      err.message?.includes('Timeout') || 
@@ -603,7 +604,7 @@ export async function handleGuildMemberRemove(member) {
             })
             .setTimestamp();
 
-        await logChannel.send({ embeds: [embed] }).catch(err => {
+        await logChannel.send({ ...toV2FromEmbedBuilder(embed) }).catch(err => {
             // Tratar erros de timeout e conexão como warnings, não erros críticos
             const isNetworkError = err.message?.includes('timeout') || 
                                  err.message?.includes('Timeout') || 
@@ -863,7 +864,7 @@ export async function handleUserUpdate(oldUser, newUser) {
                         .setImage(newAvatarURL);
                 }
                 
-                await logChannel.send({ embeds: [embed] }).catch(err => {
+                await logChannel.send({ ...toV2FromEmbedBuilder(embed) }).catch(err => {
                     // Tratar erros de timeout e conexão como warnings, não erros críticos
                     const isNetworkError = err.message?.includes('timeout') || 
                                          err.message?.includes('Timeout') || 

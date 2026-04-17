@@ -1,3 +1,4 @@
+import { MessageFlags } from 'discord.js';
 import logger from './logger.js';
 
 /**
@@ -74,7 +75,7 @@ export async function replyWithAutoDelete(interaction, options, delay = 60000) {
         }
 
         // Só agendar deleção se não for ephemeral
-        if (!options.ephemeral && !(options.flags === 64)) {
+        if (!options.ephemeral && !(options.flags & MessageFlags.Ephemeral)) {
             scheduleAutoDelete(message, delay);
         }
 
@@ -115,7 +116,7 @@ export async function updateWithAutoDelete(interaction, options, delay = 60000) 
         }
 
         // Só agendar deleção se não for ephemeral
-        if (!options.ephemeral && !(options.flags === 64)) {
+        if (!options.ephemeral && !(options.flags & MessageFlags.Ephemeral)) {
             scheduleAutoDelete(message, delay);
         }
 

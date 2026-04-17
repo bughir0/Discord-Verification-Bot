@@ -1,6 +1,7 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { database as db } from '../database/database.js';
 import { getChannelId, getColors, getStaffMentions } from '../utils/configHelper.js';
+import { buildWhitelistStaffMessageV2, mergeV2WithRows, toV2FromEmbedBuilder } from '../utils/embedBuilderV2.js';
 import logger from '../utils/logger.js';
 
 async function handleWhitelistModal(interaction) {
@@ -53,13 +54,10 @@ async function handleWhitelistModal(interaction) {
                 .setDescription('O sistema de whitelist está temporariamente desativado. Entre em contato com um administrador para mais informações.');
             
             if (!alreadyAcknowledged) {
-                return await interaction.editReply({ 
-                    embeds: [errorEmbed]
-                }).catch(console.error);
+                return await interaction.editReply(toV2FromEmbedBuilder(errorEmbed, true)).catch(console.error);
             } else {
                 return await interaction.followUp({ 
-                    embeds: [errorEmbed],
-                    ephemeral: true
+                    ...toV2FromEmbedBuilder(errorEmbed, true)
                 }).catch(console.error);
             }
         }
@@ -77,14 +75,11 @@ async function handleWhitelistModal(interaction) {
                 .setDescription('Por favor, forneça um nome de usuário do Minecraft válido (mínimo 3 caracteres).');
             
             if (!alreadyAcknowledged) {
-                return await interaction.editReply({ 
-                    embeds: [errorEmbed]
-                }).catch(console.error);
+                return await interaction.editReply(toV2FromEmbedBuilder(errorEmbed, true)).catch(console.error);
             } else {
                 // Se já foi reconhecida, tenta enviar uma nova mensagem
                 return await interaction.followUp({ 
-                    embeds: [errorEmbed],
-                    ephemeral: true
+                    ...toV2FromEmbedBuilder(errorEmbed, true)
                 }).catch(console.error);
             }
         }
@@ -98,13 +93,10 @@ async function handleWhitelistModal(interaction) {
                 .setDescription('Nome de usuário inválido! Use apenas letras, números e underscore (3-16 caracteres).');
             
             if (!alreadyAcknowledged) {
-                return await interaction.editReply({ 
-                    embeds: [errorEmbed]
-                }).catch(console.error);
+                return await interaction.editReply(toV2FromEmbedBuilder(errorEmbed, true)).catch(console.error);
             } else {
                 return await interaction.followUp({ 
-                    embeds: [errorEmbed],
-                    ephemeral: true
+                    ...toV2FromEmbedBuilder(errorEmbed, true)
                 }).catch(console.error);
             }
         }
@@ -153,14 +145,11 @@ async function handleWhitelistModal(interaction) {
 
             try {
                 if (!alreadyAcknowledged) {
-                    await interaction.editReply({
-                        embeds: [successEmbed]
-                    });
+                    await interaction.editReply(toV2FromEmbedBuilder(successEmbed, true));
                 } else {
                     // Se já foi reconhecida, tenta enviar uma nova mensagem
                     await interaction.followUp({
-                        embeds: [successEmbed],
-                        ephemeral: true
+                        ...toV2FromEmbedBuilder(successEmbed, true)
                     });
                 }
             } catch (error) {
@@ -182,10 +171,7 @@ async function handleWhitelistModal(interaction) {
                 .setTitle('❌ Erro')
                 .setDescription('Ocorreu um erro ao processar sua solicitação de whitelist. Por favor, tente novamente mais tarde.');
                 
-            return await interaction.editReply({ 
-                embeds: [errorEmbed],
-                flags: 64
-            }).catch(console.error);
+            return await interaction.editReply(toV2FromEmbedBuilder(errorEmbed, true)).catch(console.error);
         }
         
         // Enviar mensagem no canal de solicitações de whitelist (wl-solicitacao)
@@ -195,61 +181,13 @@ async function handleWhitelistModal(interaction) {
                 const notificationChannel = interaction.guild.channels.cache.get(whitelistSolicitacaoId);
                 
                 if (notificationChannel) {
-                    // Calcular idade da conta
-                    const accountAge = Math.floor((Date.now() - member.user.createdTimestamp) / (1000 * 60 * 60 * 24));
-                    const accountAgeText = accountAge === 0 ? 'Hoje' : accountAge === 1 ? '1 dia' : `${accountAge} dias`;
-                    
-                    // Calcular tempo no servidor
-                    const timeInServer = Math.floor((Date.now() - member.joinedTimestamp) / (1000 * 60 * 60 * 24));
-                    const timeInServerText = timeInServer === 0 ? 'Hoje' : timeInServer === 1 ? '1 dia' : `${timeInServer} dias`;
-                    
-                    const colors = getColors();
-                    const embed = new EmbedBuilder()
-                        .setColor(0xf39c12) // Laranja para pendente
-                        .setAuthor({ 
-                            name: 'Nova Solicitação de Whitelist', 
-                            iconURL: interaction.guild.iconURL({ dynamic: true }) || undefined 
-                        })
-                        .setTitle('🎮 Whitelist Pendente')
-                        .setDescription(`**${member.user}** solicitou whitelist no servidor`)
-                        .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
-                        .addFields(
-                            {
-                                name: '👤 Informações do Usuário',
-                                value: `**Tag:** ${member.user.tag}\n**ID:** \`${member.id}\``,
-                                inline: true
-                            },
-                            {
-                                name: '🎮 Nome de Usuário Minecraft',
-                                value: `\`${minecraftUsername.trim()}\``,
-                                inline: true
-                            },
-                            {
-                                name: '📱 Plataforma',
-                                value: platform === 'bedrock' ? '🔷 **Bedrock**' : '☕ **Java**',
-                                inline: true
-                            },
-                            {
-                                name: '📅 Informações da Conta',
-                                value: `**Criada:** <t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`,
-                                inline: true
-                            },
-                            {
-                                name: '🏠 No Servidor',
-                                value: `**Entrou:** <t:${Math.floor(member.joinedTimestamp / 1000)}:R>`,
-                                inline: true
-                            },
-                            {
-                                name: '📝 Status da Whitelist',
-                                value: '```🟡 PENDENTE - Aguardando análise da equipe```',
-                                inline: false
-                            }
-                        )
-                        .setFooter({ 
-                            text: `ID: ${member.id} • Clique nos botões abaixo para aprovar ou recusar`, 
-                            iconURL: interaction.guild.iconURL({ dynamic: true }) 
-                        })
-                        .setTimestamp();
+                    const staffCard = buildWhitelistStaffMessageV2({
+                        guild: interaction.guild,
+                        member,
+                        minecraftUsername: minecraftUsername.trim(),
+                        platform: platform === 'bedrock' ? 'bedrock' : 'java',
+                        status: 'pending'
+                    });
 
                     const row = new ActionRowBuilder()
                         .addComponents(
@@ -272,8 +210,7 @@ async function handleWhitelistModal(interaction) {
                     if (botMember && notificationChannel.permissionsFor(botMember)?.has(['SendMessages', 'EmbedLinks', 'ViewChannel'])) {
                         await notificationChannel.send({
                             content: `${staffMention} Nova whitelist pendente!`,
-                            embeds: [embed],
-                            components: [row]
+                            ...mergeV2WithRows(staffCard, [row])
                         });
                         
                         logger.info('Solicitação de whitelist enviada para wl-solicitacao', {
@@ -328,15 +265,10 @@ async function handleWhitelistModal(interaction) {
 
         try {
             if (interaction.replied || interaction.deferred) {
-                await interaction.editReply({
-                    embeds: [errorEmbed],
-                    flags: 64
-                }).catch(console.error);
+                await interaction.editReply(toV2FromEmbedBuilder(errorEmbed, true)).catch(console.error);
             } else {
                 await interaction.reply({
-                    embeds: [errorEmbed],
-                    ephemeral: true,
-                    flags: 64
+                    ...toV2FromEmbedBuilder(errorEmbed, true)
                 }).catch(console.error);
             }
         } catch (replyError) {

@@ -29,6 +29,7 @@ import { handleTestLogsCommand } from '../commands/admin/testLogs.js';
 import { handleHelpCommand } from '../commands/info/help.js';
 import { handleStatusCommand } from '../commands/info/status.js';
 import { handleYoutubeCommand } from '../commands/media/youtube.js';
+import { MessageFlags } from 'discord.js';
 import { checkCooldown, formatCooldown } from '../utils/cooldown.js';
 import { error } from '../utils/responseUtils.js';
 
@@ -37,65 +38,68 @@ const interactionQueue = new Map();
 async function safeReply(interaction, options) {
     // Early return if interaction is already handled
     if (interaction.replied || interaction.deferred) {
-        if (options.ephemeral) {
-            options.flags = 64; // Use flags for ephemeral
-            delete options.ephemeral;
+        const editOpts = { ...options };
+        if (editOpts.ephemeral) {
+            editOpts.flags = (editOpts.flags || 0) | MessageFlags.Ephemeral;
+            delete editOpts.ephemeral;
         }
-        return interaction.editReply(options).catch(e => {
+        return interaction.editReply(editOpts).catch(e => {
             console.error('Error in editReply:', e);
             throw e;
         });
     }
 
     try {
-        // Prepare response options
-        const responseOptions = { ...options };
-        
-        // Handle ephemeral flag
+        let responseOptions = { ...options };
+
+        const wantEphemeral = Boolean(responseOptions.ephemeral);
         if (responseOptions.ephemeral) {
-            responseOptions.flags = 64;
+            responseOptions.flags = (responseOptions.flags || 0) | MessageFlags.Ephemeral;
             delete responseOptions.ephemeral;
         }
-        
-        // Handle error responses
+
         if (responseOptions.isError) {
-            responseOptions.embeds = [error({
+            const errPayload = error({
                 title: responseOptions.title || 'Erro',
                 description: responseOptions.content || responseOptions.description || 'Ocorreu um erro inesperado.',
-                ephemeral: responseOptions.ephemeral !== false
-            })];
+                ephemeral: wantEphemeral
+            });
             delete responseOptions.isError;
+            delete responseOptions.title;
+            delete responseOptions.content;
+            delete responseOptions.description;
+            responseOptions = { ...responseOptions, ...errPayload };
         }
-        
-        // Ensure we have valid content or embeds
-        if (!responseOptions.content && !responseOptions.embeds?.length) {
-            responseOptions.embeds = [error({ 
+
+        const hasBody = Boolean(
+            responseOptions.content
+            || responseOptions.embeds?.length
+            || responseOptions.components?.length
+        );
+        if (!hasBody) {
+            Object.assign(responseOptions, error({
                 title: 'Erro de Desenvolvimento',
                 description: 'Esta resposta não contém conteúdo válido.',
                 ephemeral: true
-            })];
+            }));
         }
-        
-        // Send the response
+
         return await interaction.reply(responseOptions);
     } catch (err) {
         console.error('Error in safeReply:', err);
-        
-        // Only try to send error if we haven't already replied
+
         if (!interaction.replied && !interaction.deferred) {
             try {
-                await interaction.reply({
-                    embeds: [error({
-                        title: 'Erro',
-                        description: 'Ocorreu um erro ao processar sua solicitação.',
-                        ephemeral: true
-                    })]
-                });
+                await interaction.reply(error({
+                    title: 'Erro',
+                    description: 'Ocorreu um erro ao processar sua solicitação.',
+                    ephemeral: true
+                }));
             } catch (replyError) {
                 console.error('Failed to send error message:', replyError);
             }
         }
-        throw err; // Re-throw to allow error handling upstream
+        throw err;
     }
 }
 
@@ -328,14 +332,11 @@ async function processInteractionQueue(interaction) {
                 // Tentar enviar mensagem de erro apenas se ainda não foi respondido
                 if (!interaction.replied && !interaction.deferred) {
                     try {
-                        await interaction.reply({
-                            embeds: [error({
-                                title: 'Erro',
-                                description: 'Ocorreu um erro ao executar este comando.',
-                                ephemeral: true
-                            }).embeds[0]],
+                        await interaction.reply(error({
+                            title: 'Erro',
+                            description: 'Ocorreu um erro ao executar este comando.',
                             ephemeral: true
-                        });
+                        }));
                     } catch (replyError) {
                         // Se falhar ao responder, apenas logar
                         console.error('Erro ao enviar mensagem de erro:', replyError.message);

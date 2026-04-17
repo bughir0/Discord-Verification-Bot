@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { logModerationAction } from '../../utils/moderationUtils.js';
+import { mergeV2WithRows } from '../../utils/embedBuilderV2.js';
 import { success, error, warning, info } from '../../utils/responseUtils.js';
 import logger from '../../utils/logger.js';
 import { updateWithAutoDelete, replyWithAutoDelete } from '../../utils/autoDeleteMessage.js';
@@ -165,10 +166,7 @@ export async function handleUnbanCommand(interaction) {
         );
 
     // Enviar mensagem de confirmação
-    await interaction.reply({
-        ...confirmEmbed,
-        components: [confirmRow]
-    });
+    await interaction.reply(mergeV2WithRows(confirmEmbed, [confirmRow]));
 
     // Buscar a mensagem de confirmação
     const confirmationMessage = await interaction.fetchReply();
@@ -255,7 +253,6 @@ export async function handleUnbanCommand(interaction) {
                     description: 'O tempo para responder expirou.',
                     ephemeral: true
                 }),
-                embeds: [],
                 components: []
             });
         } else {

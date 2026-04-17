@@ -1,6 +1,8 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { database as db } from '../database/database.js';
 import { getChannelId, getRoleId, getColors, hasStaffRole } from '../utils/configHelper.js';
+import { buildVerificationStaffMessageV2, toV2FromEmbedBuilder } from '../utils/embedBuilderV2.js';
+import { error as errorResponse } from '../utils/responseUtils.js';
 import logger from '../utils/logger.js';
 
 async function handleVerificationAction(interaction) {
@@ -28,24 +30,17 @@ async function handleVerificationAction(interaction) {
         
         // Check if user has any staff role
         if (!hasStaffRole(interaction.member)) {
-            const embed = new EmbedBuilder()
-                .setColor(getColors().danger)
-                .setTitle('❌ Acesso Negado')
-                .setDescription('Apenas membros da equipe podem realizar esta ação.')
-                .setFooter({ text: 'Verificação', iconURL: interaction.guild.iconURL() })
-                .setTimestamp();
+            const denied = errorResponse({
+                title: 'Acesso Negado',
+                description: 'Apenas membros da equipe podem realizar esta ação.',
+                ephemeral: true
+            });
 
             try {
                 if (interaction.replied || interaction.deferred) {
-                    await interaction.followUp({
-                        embeds: [embed],
-                        ephemeral: true
-                    });
+                    await interaction.followUp(denied);
                 } else {
-                    await interaction.reply({
-                        embeds: [embed],
-                        ephemeral: true
-                    });
+                    await interaction.reply(denied);
                 }
             } catch (error) {
                 if (error.code !== 'InteractionAlreadyReplied') {
@@ -116,7 +111,7 @@ async function handleVerificationAction(interaction) {
 
                     const message = await verificationChannel.send({
                         content: member.toString(),
-                        embeds: [denialEmbed]
+                        ...toV2FromEmbedBuilder(denialEmbed)
                     });
 
                     // Deletar a mensagem após 5 minutos
@@ -163,45 +158,10 @@ async function handleVerificationAction(interaction) {
             }
         }
         
-        // Atualizar mensagem original
-        const embed = new EmbedBuilder(interaction.message.embeds[0]);
-        const colors = getColors();
-        embed.setColor(isApproval ? colors.success : colors.danger);
-        
         const statusTitle = isApproval ? 'APROVADA' : 'RECUSADA';
-        const statusEmoji = isApproval ? '<a:sucesso:1443149628085244036>' : '<a:erro:1443149642580758569>';
-        embed.setTitle(`${statusEmoji} Verificação ${statusTitle}`);
-        
-        // Atualizar campo de status
-        const statusText = isApproval ? 'Aprovada' : 'Recusada';
-        
-        // Encontrar e remover o campo de status existente, se houver
-        const fields = embed.data.fields || [];
-        const filteredFields = fields.filter(field => field.name !== '📝 Status da Verificação' && field.name !== '📝 Status');
-        
-        // Adicionar informações de quem aprovou/recusou
-        filteredFields.push({
-            name: '📝 Status da Verificação',
-            value: `\`\`\`${isApproval ? '🟢 APROVADA' : '🔴 RECUSADA'} por ${staffMember.username}\`\`\``,
-            inline: false
-        });
-        
-        // Adicionar informações adicionais
-        filteredFields.push({
-            name: '🛠️ Processado por',
-            value: `${staffMember} (${staffMember.tag})`,
-            inline: true
-        });
-        
-        filteredFields.push({
-            name: '⏰ Processado em',
-            value: `<t:${Math.floor(Date.now() / 1000)}:F>`,
-            inline: true
-        });
-        
-        // Atualizar os campos do embed
-        embed.setFields(filteredFields);
-        
+        const verificationRow = db.getVerification(userId);
+        const referralInfo = verificationRow?.referralSource?.trim() || 'Não informado';
+
         // Enviar log para o canal de log-ficha
         const logFichaChannelId = getChannelId(interaction.guild.id, 'logFicha');
         const logFichaChannel = logFichaChannelId ? interaction.guild.channels.cache.get(logFichaChannelId) : null;
@@ -234,8 +194,6 @@ async function handleVerificationAction(interaction) {
             const timeInServerText = timeInServer !== null 
                 ? (timeInServer === 0 ? 'Hoje' : timeInServer === 1 ? '1 dia' : `${timeInServer} dias`)
                 : 'Desconhecido';
-            
-            const referralInfo = embed.data.fields?.find(f => f.name === '📌 Indicado por')?.value?.replace(/```/g, '').trim() || 'Não informado';
             
             const logEmbed = new EmbedBuilder()
                 .setColor(isApproval ? colors.success : colors.danger)
@@ -294,7 +252,7 @@ async function handleVerificationAction(interaction) {
                 .setTimestamp();
                 
                 // Enviar mensagem de log (sem auto-deleção)
-                await logFichaChannel.send({ embeds: [logEmbed] }).catch(error => {
+                await logFichaChannel.send({ ...toV2FromEmbedBuilder(logEmbed) }).catch(error => {
                     logger.error('Erro ao enviar log de ficha', {
                         error: error.message,
                         guildId: interaction.guild.id,
@@ -325,10 +283,19 @@ async function handleVerificationAction(interaction) {
                     // Tente editar a mensagem original para remover os botões
                     const message = interaction.message;
                     if (message && message.editable) {
-                        await message.edit({
-                            embeds: [embed],
-                            components: [] // Remove os botões
-                        });
+                        if (member) {
+                            const updatedCard = buildVerificationStaffMessageV2({
+                                guild: interaction.guild,
+                                member,
+                                referralSource: referralInfo,
+                                status: isApproval ? 'approved' : 'denied',
+                                staffUser: staffMember
+                            });
+                            await message.edit({
+                                ...updatedCard,
+                                components: []
+                            });
+                        }
                         
                         // Agendar exclusão da mensagem do canal de notificações após 1 minuto
                         setTimeout(async () => {

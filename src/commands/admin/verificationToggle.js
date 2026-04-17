@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { database as db } from '../../database/database.js';
+import { mergeV2WithRows, toV2FromEmbedBuilder } from '../../utils/embedBuilderV2.js';
 import { success, error, info } from '../../utils/responseUtils.js';
 import logger from '../../utils/logger.js';
 import { getColors } from '../../utils/configHelper.js';
@@ -97,9 +98,7 @@ async function handleVerificationActivate(interaction, guildId) {
         );
 
     return await interaction.reply({
-        embeds: [confirmEmbed],
-        components: [row],
-        ephemeral: true
+        ...mergeV2WithRows(toV2FromEmbedBuilder(confirmEmbed, true), [row])
     });
 }
 
@@ -144,9 +143,7 @@ async function handleVerificationDeactivate(interaction, guildId) {
         );
 
     return await interaction.reply({
-        embeds: [confirmEmbed],
-        components: [row],
-        ephemeral: true
+        ...mergeV2WithRows(toV2FromEmbedBuilder(confirmEmbed, true), [row])
     });
 }
 

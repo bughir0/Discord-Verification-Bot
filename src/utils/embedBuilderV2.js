@@ -3,6 +3,7 @@ import {
     ButtonBuilder,
     ButtonStyle,
     ContainerBuilder,
+    EmbedBuilder,
     MediaGalleryBuilder,
     MediaGalleryItemBuilder,
     MessageFlags,
@@ -10,6 +11,8 @@ import {
     TextDisplayBuilder,
     ThumbnailBuilder
 } from 'discord.js';
+import { getColors } from './configHelper.js';
+import { truncateText, validateFields } from './messageTextUtils.js';
 
 const TEXT_MAX = 4000;
 const DEFAULT_EMBED_ACCENT = 0x5865f2;
@@ -235,4 +238,322 @@ export function buildEmbedMessageV2(embedData, options = {}) {
     }
 
     return { components, flags };
+}
+
+/**
+ * Cartão padrão do bot (substitui embeds de responseUtils) — Components V2.
+ * Mesma semântica que o antigo createResponse com EmbedBuilder.
+ */
+export function buildStandardCardV2({
+    title = '',
+    description = '',
+    type = 'info',
+    fields = [],
+    color,
+    ephemeral = false,
+    thumbnail,
+    image,
+    footer,
+    author
+} = {}) {
+    const CUSTOM_EMOJIS = {
+        success: '<a:sucesso:1443149628085244036>',
+        error: '<a:erro:1443149642580758569>'
+    };
+
+    const configColors = getColors();
+    const colors = {
+        info: configColors.info || 0x3498db,
+        success: configColors.success || 0x2ecc71,
+        warning: configColors.warning || 0xf39c12,
+        error: configColors.danger || 0xe74c3c,
+        custom: color || configColors.primary || 0x9b59b6
+    };
+
+    const icons = {
+        info: 'ℹ️',
+        success: CUSTOM_EMOJIS.success,
+        warning: '⚠️',
+        error: CUSTOM_EMOJIS.error,
+        custom: '✨'
+    };
+
+    const icon = icons[type] || icons.custom;
+
+    let titleOut;
+    if (title) {
+        const isCustomEmoji = typeof icon === 'string' && (icon.startsWith('<:') || icon.startsWith('<a:'));
+        const fullTitle = isCustomEmoji ? title : `${icon} ${title}`;
+        titleOut = truncateText(fullTitle, 256);
+    }
+
+    let descOut = '\u200b';
+    if (description && description.trim() !== '') {
+        let finalDescription = truncateText(description, 4096);
+        if (icon && typeof icon === 'string' && (icon.startsWith('<:') || icon.startsWith('<a:'))) {
+            finalDescription = `${icon} ${finalDescription}`;
+        }
+        descOut = finalDescription;
+    }
+
+    const validatedFields = validateFields(fields);
+
+    const accent = color || colors[type] || colors.custom;
+
+    /** @type {Record<string, unknown>} */
+    const embedData = {
+        color: accent,
+        title: titleOut,
+        description: descOut,
+        fields: validatedFields,
+        timestamp: new Date().toISOString()
+    };
+
+    if (thumbnail) {
+        embedData.thumbnail = { url: thumbnail };
+    }
+    if (image) {
+        embedData.image = { url: image };
+    }
+    if (footer) {
+        if (typeof footer === 'string') {
+            embedData.footer = { text: truncateText(footer, 2048) };
+        } else {
+            const footerObj = { ...footer };
+            if (footerObj.text) {
+                footerObj.text = truncateText(footerObj.text, 2048);
+            }
+            if (footerObj.iconURL) {
+                footerObj.icon_url = footerObj.iconURL;
+                delete footerObj.iconURL;
+            }
+            embedData.footer = footerObj;
+        }
+    }
+    if (author) {
+        if (typeof author === 'string') {
+            embedData.author = { name: truncateText(author, 256) };
+        } else {
+            const authorObj = { ...author };
+            if (authorObj.name) {
+                authorObj.name = truncateText(authorObj.name, 256);
+            }
+            if (authorObj.iconURL) {
+                authorObj.icon_url = authorObj.iconURL;
+                delete authorObj.iconURL;
+            }
+            embedData.author = authorObj;
+        }
+    }
+
+    return buildEmbedMessageV2(embedData, { ephemeral });
+}
+
+/**
+ * Junta um payload V2 (`components` + `flags`) com filas de botões/menus.
+ * @param {{ components: unknown[], flags: number }} cardPayload
+ * @param {import('discord.js').ActionRowBuilder[]} rows
+ */
+export function mergeV2WithRows(cardPayload, rows) {
+    return {
+        components: [...(cardPayload.components || []), ...rows],
+        flags: cardPayload.flags
+    };
+}
+
+/**
+ * Ficha de verificação no canal de staff (substitui leitura de message.embeds[0]).
+ * @param {Object} opts
+ * @param {import('discord.js').Guild} opts.guild
+ * @param {import('discord.js').GuildMember} opts.member
+ * @param {string} [opts.referralSource]
+ * @param {'pending'|'approved'|'denied'} opts.status
+ * @param {import('discord.js').User} [opts.staffUser] — obrigatório se status !== pending
+ */
+export function buildVerificationStaffMessageV2({
+    guild,
+    member,
+    referralSource = 'Não informado',
+    status,
+    staffUser
+}) {
+    const colors = getColors();
+    const isPending = status === 'pending';
+    const isApproved = status === 'approved';
+    const color = isPending ? 0xf39c12 : (isApproved ? (colors.success || 0x2ecc71) : (colors.danger || 0xe74c3c));
+    const statusTitle = isPending ? 'Pendente' : (isApproved ? 'APROVADA' : 'RECUSADA');
+    const statusEmoji = isPending ? '🔍' : (isApproved ? '<a:sucesso:1443149628085244036>' : '<a:erro:1443149642580758569>');
+
+    const refVal = referralSource && referralSource !== 'Não informado'
+        ? `\`${referralSource}\``
+        : '`Não informado`';
+
+    const embed = new EmbedBuilder()
+        .setColor(color)
+        .setAuthor({
+            name: isPending ? 'Nova Solicitação de Verificação' : `Verificação ${statusTitle}`,
+            iconURL: guild.iconURL({ dynamic: true }) || undefined
+        })
+        .setTitle(isPending ? '🔍 Verificação Pendente' : `${statusEmoji} Verificação ${statusTitle}`)
+        .setDescription(`**${member.user}** solicitou verificação no servidor`)
+        .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
+        .addFields(
+            {
+                name: '👤 Informações do Usuário',
+                value: `**Tag:** ${member.user.tag}\n**ID:** \`${member.id}\``,
+                inline: true
+            },
+            {
+                name: '📅 Informações da Conta',
+                value: member.user.createdTimestamp
+                    ? `**Criada:** <t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`
+                    : 'Desconhecido',
+                inline: true
+            },
+            {
+                name: '🏠 No Servidor',
+                value: member.joinedTimestamp
+                    ? `**Entrou:** <t:${Math.floor(member.joinedTimestamp / 1000)}:R>`
+                    : 'Desconhecido',
+                inline: true
+            },
+            {
+                name: '📌 Indicado por',
+                value: refVal,
+                inline: false
+            },
+            {
+                name: '📝 Status da Verificação',
+                value: isPending
+                    ? '```🟡 PENDENTE - Aguardando análise da equipe```'
+                    : `\`\`\`${isApproved ? '🟢 APROVADA' : '🔴 RECUSADA'} por ${staffUser?.username ?? 'staff'}\`\`\``,
+                inline: false
+            }
+        );
+
+    if (!isPending && staffUser) {
+        embed.addFields(
+            {
+                name: '🛠️ Processado por',
+                value: `${staffUser} (${staffUser.tag})`,
+                inline: true
+            },
+            {
+                name: '⏰ Processado em',
+                value: `<t:${Math.floor(Date.now() / 1000)}:F>`,
+                inline: true
+            }
+        );
+    }
+
+    embed.setFooter({
+        text: isPending
+            ? `ID: ${member.id} • Clique nos botões abaixo para aprovar ou recusar`
+            : `ID: ${member.id}`,
+        iconURL: guild.iconURL({ dynamic: true })
+    }).setTimestamp();
+
+    return buildEmbedMessageV2(embed.toJSON());
+}
+
+/**
+ * Ficha de whitelist no canal de staff (wl-solicitacao).
+ * @param {'pending'|'approved'|'denied'} opts.status
+ */
+export function buildWhitelistStaffMessageV2({
+    guild,
+    member,
+    minecraftUsername,
+    platform = 'java',
+    status,
+    staffUser
+}) {
+    const colors = getColors();
+    const isPending = status === 'pending';
+    const isApproved = status === 'approved';
+    const color = isPending ? 0xf39c12 : (isApproved ? (colors.success || 0x2ecc71) : (colors.danger || 0xe74c3c));
+    const statusTitle = isPending ? 'Pendente' : (isApproved ? 'APROVADA' : 'RECUSADA');
+    const statusEmoji = isPending ? '🎮' : (isApproved ? '<a:sucesso:1443149628085244036>' : '<a:erro:1443149642580758569>');
+    const platLabel = platform === 'bedrock' ? '🔷 **Bedrock**' : '☕ **Java**';
+
+    const embed = new EmbedBuilder()
+        .setColor(color)
+        .setAuthor({
+            name: isPending ? 'Nova Solicitação de Whitelist' : `Whitelist ${statusTitle}`,
+            iconURL: guild.iconURL({ dynamic: true }) || undefined
+        })
+        .setTitle(isPending ? '🎮 Whitelist Pendente' : `${statusEmoji} Whitelist ${statusTitle}`)
+        .setDescription(`**${member.user}** solicitou whitelist no servidor`)
+        .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
+        .addFields(
+            {
+                name: '👤 Informações do Usuário',
+                value: `**Tag:** ${member.user.tag}\n**ID:** \`${member.id}\``,
+                inline: true
+            },
+            {
+                name: '🎮 Nome de Usuário Minecraft',
+                value: `\`${minecraftUsername}\``,
+                inline: true
+            },
+            {
+                name: '📱 Plataforma',
+                value: platLabel,
+                inline: true
+            },
+            {
+                name: '📅 Informações da Conta',
+                value: member.user.createdTimestamp
+                    ? `**Criada:** <t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`
+                    : 'Desconhecido',
+                inline: true
+            },
+            {
+                name: '🏠 No Servidor',
+                value: member.joinedTimestamp
+                    ? `**Entrou:** <t:${Math.floor(member.joinedTimestamp / 1000)}:R>`
+                    : 'Desconhecido',
+                inline: true
+            },
+            {
+                name: '📝 Status da Whitelist',
+                value: isPending
+                    ? '```🟡 PENDENTE - Aguardando análise da equipe```'
+                    : `\`\`\`${isApproved ? '🟢 APROVADA' : '🔴 RECUSADA'} por ${staffUser?.username ?? 'staff'}\`\`\``,
+                inline: false
+            }
+        );
+
+    if (!isPending && staffUser) {
+        embed.addFields(
+            {
+                name: '🛠️ Processado por',
+                value: `${staffUser} (${staffUser.tag})`,
+                inline: true
+            },
+            {
+                name: '⏰ Processado em',
+                value: `<t:${Math.floor(Date.now() / 1000)}:F>`,
+                inline: true
+            }
+        );
+    }
+
+    embed.setFooter({
+        text: isPending
+            ? `ID: ${member.id} • Clique nos botões abaixo para aprovar ou recusar`
+            : `ID: ${member.id}`,
+        iconURL: guild.iconURL({ dynamic: true })
+    }).setTimestamp();
+
+    return buildEmbedMessageV2(embed.toJSON());
+}
+
+/**
+ * Converte um EmbedBuilder em payload V2 (envio em canal ou DM).
+ * @param {import('discord.js').EmbedBuilder} embedBuilder
+ * @param {boolean} [ephemeral]
+ */
+export function toV2FromEmbedBuilder(embedBuilder, ephemeral = false) {
+    return buildEmbedMessageV2(embedBuilder.toJSON(), { ephemeral });
 }

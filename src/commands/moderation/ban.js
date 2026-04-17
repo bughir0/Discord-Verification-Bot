@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js';
 import { createModerationEmbed, logModerationAction } from '../../utils/moderationUtils.js';
+import { mergeV2WithRows, toV2FromEmbedBuilder } from '../../utils/embedBuilderV2.js';
 import { success, error, warning } from '../../utils/responseUtils.js';
 import logger from '../../utils/logger.js';
 import { updateWithAutoDelete, replyWithAutoDelete } from '../../utils/autoDeleteMessage.js';
@@ -144,10 +145,7 @@ export async function handleBanCommand(interaction) {
         );
 
     // Enviar mensagem de confirmação
-    await interaction.reply({
-        ...confirmEmbed,
-        components: [confirmRow]
-    });
+    await interaction.reply(mergeV2WithRows(confirmEmbed, [confirmRow]));
 
     // Buscar a mensagem de confirmação
     const confirmationMessage = await interaction.fetchReply();
@@ -173,7 +171,7 @@ export async function handleBanCommand(interaction) {
                 .setTimestamp();
 
             // Tentar enviar DM, mas não bloquear se falhar
-            await targetUser.send({ embeds: [dmEmbed] })
+            await targetUser.send({ ...toV2FromEmbedBuilder(dmEmbed) })
                 .catch(error => {
                     if (error.code === 50007) {
                         // Usuário tem DMs desativadas ou bloqueou o bot
@@ -222,7 +220,7 @@ export async function handleBanCommand(interaction) {
                     try {
                         const { sendAutoDeleteMessage } = await import('../../utils/autoDeleteMessage.js');
                         await sendAutoDeleteMessage(interaction.channel, {
-                            embeds: successEmbed.embeds
+                            ...successEmbed
                         });
                     } catch (followUpError) {
                         console.error('Erro ao enviar follow-up:', followUpError);
@@ -286,7 +284,7 @@ export async function handleBanCommand(interaction) {
                             ephemeral: false
                         });
                         await sendAutoDeleteMessage(interaction.channel, {
-                            embeds: cancelResponse.embeds
+                            ...cancelResponse
                         });
                     } catch (followUpError) {
                         console.error('Erro ao enviar follow-up de cancelamento:', followUpError);
@@ -296,9 +294,9 @@ export async function handleBanCommand(interaction) {
                 }
             }
         }
-    } catch (error) {
+    } catch (err) {
         // Se o tempo esgotar
-        if (error.code === 'INTERACTION_COLLECTOR_ERROR') {
+        if (err.code === 'INTERACTION_COLLECTOR_ERROR') {
             logger.warning('Tempo esgotado no comando /ban', {
                 guildId: interaction.guild.id,
                 moderatorId: moderator.id,
@@ -325,7 +323,7 @@ export async function handleBanCommand(interaction) {
                             ephemeral: false
                         });
                         await sendAutoDeleteMessage(interaction.channel, {
-                            embeds: timeoutResponse.embeds
+                            ...timeoutResponse
                         });
                     } catch (followUpError) {
                         console.error('Erro ao enviar follow-up de timeout:', followUpError);
@@ -340,9 +338,9 @@ export async function handleBanCommand(interaction) {
                 moderatorId: moderator.id,
                 moderatorTag: moderator.tag,
                 targetId: targetUser.id,
-                error: error.message,
-                stack: error.stack,
-                code: error.code
+                error: err.message,
+                stack: err.stack,
+                code: err.code
             });
             try {
                 await interaction.followUp({

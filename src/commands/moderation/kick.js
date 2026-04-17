@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js';
 import { logModerationAction } from '../../utils/moderationUtils.js';
+import { mergeV2WithRows, toV2FromEmbedBuilder } from '../../utils/embedBuilderV2.js';
 import { success, error, warning, info } from '../../utils/responseUtils.js';
 import logger from '../../utils/logger.js';
 import { updateWithAutoDelete, replyWithAutoDelete } from '../../utils/autoDeleteMessage.js';
@@ -138,10 +139,7 @@ export async function handleKickCommand(interaction) {
         );
 
     // Enviar mensagem de confirmação
-    await interaction.reply({
-        ...confirmEmbed,
-        components: [confirmRow]
-    });
+    await interaction.reply(mergeV2WithRows(confirmEmbed, [confirmRow]));
 
     // Buscar a mensagem de confirmação
     const confirmationMessage = await interaction.fetchReply();
@@ -167,7 +165,7 @@ export async function handleKickCommand(interaction) {
                 .setTimestamp();
 
             // Tentar enviar DM, mas não bloquear se falhar
-            await targetUser.send({ embeds: [dmEmbed] })
+            await targetUser.send({ ...toV2FromEmbedBuilder(dmEmbed) })
                 .catch(error => {
                     if (error.code === 50007) {
                         // Usuário tem DMs desativadas ou bloqueou o bot
@@ -233,7 +231,7 @@ export async function handleKickCommand(interaction) {
                             ephemeral: false
                         });
                         await sendAutoDeleteMessage(interaction.channel, {
-                            ...publicSuccessEmbed.embeds
+                            ...publicSuccessEmbed
                         });
                     } catch (followUpError) {
                         console.error('Erro ao enviar follow-up:', followUpError);
@@ -269,9 +267,9 @@ export async function handleKickCommand(interaction) {
                 components: []
             });
         }
-    } catch (error) {
+    } catch (err) {
         // Se o tempo esgotar
-        if (error.code === 'INTERACTION_COLLECTOR_ERROR') {
+        if (err.code === 'INTERACTION_COLLECTOR_ERROR') {
             logger.warning('Tempo esgotado no comando /kick', {
                 guildId: interaction.guild.id,
                 moderatorId: moderator.id,
@@ -292,9 +290,9 @@ export async function handleKickCommand(interaction) {
                 moderatorId: moderator.id,
                 moderatorTag: moderator.tag,
                 targetId: targetUser.id,
-                error: error.message,
-                stack: error.stack,
-                code: error.code
+                error: err.message,
+                stack: err.stack,
+                code: err.code
             });
             await interaction.followUp({
                 ...error({

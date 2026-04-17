@@ -36,7 +36,7 @@ export async function handleSetupVerificationModal(interaction) {
         }
         const channel = verificationChannel || interaction.channel;
 
-        const { components, flags } = buildVerificationMessageV2({
+        const verificationPayload = buildVerificationMessageV2({
             bodyText: embedText || undefined,
             accentColor,
             bannerUrl: bannerUrl || null,
@@ -44,7 +44,7 @@ export async function handleSetupVerificationModal(interaction) {
             client: interaction.client
         });
 
-        await channel.send({ components, flags });
+        await channel.send(verificationPayload);
 
         let successDescription = 'Mensagem de verificação configurada com sucesso!';
         if (willUseConfigChannel && verificationChannel) {
@@ -57,16 +57,13 @@ export async function handleSetupVerificationModal(interaction) {
             }
         }
         
-        const { components, flags } = buildSetupFeedbackV2({
+        const successFeedback = buildSetupFeedbackV2({
             title: 'Sucesso',
             description: successDescription,
             accentColor: getColors().success
         });
 
-        await interaction.editReply({
-            components,
-            flags
-        });
+        await interaction.editReply(successFeedback);
 
         logger.info('Mensagem de verificação configurada via modal', {
             guildId: interaction.guild.id,

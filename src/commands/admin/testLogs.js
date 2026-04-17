@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
+import { toV2FromEmbedBuilder } from '../../utils/embedBuilderV2.js';
 import { getChannelId } from '../../utils/configHelper.js';
 import { success, error, info } from '../../utils/responseUtils.js';
 import logger from '../../utils/logger.js';
@@ -87,7 +88,7 @@ export async function handleTestLogsCommand(interaction) {
             results.push({
                 name: channelInfo.name,
                 status: '⚠️ Sem Embed',
-                details: `Bot não pode enviar embeds em ${channel}`
+                details: `Bot não pode usar embeds/componentes ricos em ${channel} (Embed Links)`
             });
             continue;
         }
@@ -101,7 +102,7 @@ export async function handleTestLogsCommand(interaction) {
                 .setFooter({ text: 'Teste realizado por ' + interaction.user.tag })
                 .setTimestamp();
 
-            await channel.send({ embeds: [testEmbed] });
+            await channel.send({ ...toV2FromEmbedBuilder(testEmbed) });
             
             results.push({
                 name: channelInfo.name,

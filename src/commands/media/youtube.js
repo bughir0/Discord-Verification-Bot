@@ -222,13 +222,11 @@ export async function handleYoutubeCommand(interaction) {
             try {
                 videoInfo = await ytdl.getInfo(url);
             } catch (retryError) {
-                await interaction.editReply({
-                    embeds: [error({
-                        title: 'Erro ao Acessar Vídeo',
-                        description: 'Não foi possível acessar o vídeo do YouTube. Isso pode acontecer se:\n\n• O vídeo é privado ou restrito\n• O YouTube bloqueou o acesso temporariamente\n• A URL está incorreta\n\n**Soluções:**\n• Tente novamente em alguns minutos\n• Use outro vídeo\n• Verifique se a URL está correta',
-                        ephemeral: true
-                    }).embeds[0]]
-                });
+                await interaction.editReply(error({
+                    title: 'Erro ao Acessar Vídeo',
+                    description: 'Não foi possível acessar o vídeo do YouTube. Isso pode acontecer se:\n\n• O vídeo é privado ou restrito\n• O YouTube bloqueou o acesso temporariamente\n• A URL está incorreta\n\n**Soluções:**\n• Tente novamente em alguns minutos\n• Use outro vídeo\n• Verifique se a URL está correta',
+                    ephemeral: true
+                }));
                 return;
             }
         }
@@ -252,9 +250,7 @@ export async function handleYoutubeCommand(interaction) {
             ephemeral: true
         });
         
-        await interaction.editReply({
-            embeds: processingEmbed.embeds
-        });
+        await interaction.editReply(processingEmbed);
 
         const timestamp = Date.now();
         let outputPath;
@@ -343,13 +339,11 @@ export async function handleYoutubeCommand(interaction) {
 
         if (fileSizeMB > 25) {
             await cleanupFile(outputPath);
-            return await interaction.editReply({
-                ...error({
-                    title: 'Arquivo Muito Grande',
-                    description: `O arquivo é muito grande (${fileSizeMB.toFixed(2)}MB). O Discord limita arquivos a 25MB.\n\nTente um vídeo mais curto ou use MP3.`,
-                    ephemeral: true
-                }).embeds
-            });
+            return await interaction.editReply(error({
+                title: 'Arquivo Muito Grande',
+                description: `O arquivo é muito grande (${fileSizeMB.toFixed(2)}MB). O Discord limita arquivos a 25MB.\n\nTente um vídeo mais curto ou use MP3.`,
+                ephemeral: true
+            }));
         }
 
         // Criar attachment
@@ -363,7 +357,7 @@ export async function handleYoutubeCommand(interaction) {
         });
         
         await interaction.editReply({
-            embeds: successEmbed.embeds,
+            ...successEmbed,
             files: [attachment]
         });
 
@@ -433,9 +427,7 @@ export async function handleYoutubeCommand(interaction) {
             });
             
             if (interaction.deferred || interaction.replied) {
-                await interaction.editReply({
-                    embeds: errorEmbed.embeds
-                });
+                await interaction.editReply(errorEmbed);
             } else {
                 await replyWithAutoDelete(interaction, {
                     ...errorEmbed
@@ -451,8 +443,7 @@ export async function handleYoutubeCommand(interaction) {
             try {
                 if (interaction.deferred || interaction.replied) {
                     await interaction.editReply({
-                        content: '❌ Ocorreu um erro ao processar o vídeo. Tente novamente mais tarde.',
-                        embeds: []
+                        content: '❌ Ocorreu um erro ao processar o vídeo. Tente novamente mais tarde.'
                     });
                 }
             } catch (finalError) {

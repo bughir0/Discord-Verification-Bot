@@ -1,5 +1,6 @@
 import { EmbedBuilder } from 'discord.js';
 import { database as db } from '../database/database.js';
+import { toV2FromEmbedBuilder } from '../utils/embedBuilderV2.js';
 import { getColors } from '../utils/configHelper.js';
 
 async function handleVerificationStats(interaction) {
@@ -55,11 +56,11 @@ async function handleVerificationStats(interaction) {
             })
             .setTimestamp();
         
-        await interaction.editReply({ embeds: [embed] });
+        await interaction.editReply(toV2FromEmbedBuilder(embed, true));
         
     } catch (error) {
         console.error('Error in verification stats:', error);
-        
+        const colors = getColors();
         const errorEmbed = new EmbedBuilder()
             .setColor(colors.danger)
             .setTitle('❌ Erro')
@@ -71,14 +72,9 @@ async function handleVerificationStats(interaction) {
             .setTimestamp();
             
         if (!interaction.replied && !interaction.deferred) {
-            await interaction.reply({
-                embeds: [errorEmbed],
-                ephemeral: true
-            }).catch(console.error);
+            await interaction.reply(toV2FromEmbedBuilder(errorEmbed, true)).catch(console.error);
         } else if (interaction.deferred) {
-            await interaction.editReply({
-                embeds: [errorEmbed]
-            }).catch(console.error);
+            await interaction.editReply(toV2FromEmbedBuilder(errorEmbed, true)).catch(console.error);
         }
     }
 }

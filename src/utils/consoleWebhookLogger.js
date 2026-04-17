@@ -1,5 +1,6 @@
 import https from 'https';
 import { URL } from 'url';
+import { buildEmbedMessageV2 } from './embedBuilderV2.js';
 
 // Mantém referência para os métodos originais
 const originalConsole = {
@@ -55,17 +56,16 @@ function sendToWebhook(webhookUrl, level, args) {
         const content = truncate(text, 3900); // margem para o código e formatação
 
         const isError = level === 'error';
+        const v2 = buildEmbedMessageV2({
+            title: `Console ${level.toUpperCase()}`,
+            description: '```ansi\n' + content + '\n```',
+            color: colorMap[level] ?? colorMap.log,
+            timestamp: new Date().toISOString()
+        }, {});
         const payload = JSON.stringify({
-            // Mencionar o dev em erros de console
             content: isError ? '<@380475076174282753>' : undefined,
-            embeds: [
-                {
-                    title: `Console ${level.toUpperCase()}`,
-                    description: '```ansi\n' + content + '\n```',
-                    color: colorMap[level] ?? colorMap.log,
-                    timestamp: new Date().toISOString()
-                }
-            ]
+            components: v2.components,
+            flags: v2.flags
         });
 
         const options = {

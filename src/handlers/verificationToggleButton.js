@@ -1,4 +1,6 @@
 import { EmbedBuilder } from 'discord.js';
+import { mergeV2WithRows, toV2FromEmbedBuilder } from '../utils/embedBuilderV2.js';
+
 import { database as db } from '../database/database.js';
 import { success, error } from '../utils/responseUtils.js';
 import logger from '../utils/logger.js';
@@ -34,10 +36,7 @@ export async function handleVerificationToggleButton(interaction) {
                 .setFooter({ text: 'Acesso Negado', iconURL: interaction.guild.iconURL() })
                 .setTimestamp();
 
-            return await interaction.reply({
-                embeds: [embed],
-                ephemeral: true
-            });
+            return await interaction.reply(toV2FromEmbedBuilder(embed, true));
         }
 
         // Verificar se é cancelamento
@@ -50,10 +49,7 @@ export async function handleVerificationToggleButton(interaction) {
                 .setFooter({ text: 'Cancelado', iconURL: interaction.guild.iconURL() })
                 .setTimestamp();
 
-            return await interaction.update({
-                embeds: [embed],
-                components: []
-            });
+            return await interaction.update({ ...toV2FromEmbedBuilder(embed, true), components: [] });
         }
 
         // Executar ação
@@ -100,10 +96,7 @@ export async function handleVerificationToggleButton(interaction) {
             .setFooter({ text: `Ação executada por ${interaction.user.tag}`, iconURL: interaction.user.displayAvatarURL() })
             .setTimestamp();
 
-        return await interaction.update({
-            embeds: [embed],
-            components: []
-        });
+        return await interaction.update({ ...toV2FromEmbedBuilder(embed, true), components: [] });
 
     } catch (error) {
         logger.error('Erro ao processar botão de toggle de verificação', {
@@ -123,14 +116,9 @@ export async function handleVerificationToggleButton(interaction) {
 
         try {
             if (interaction.replied || interaction.deferred) {
-                await interaction.editReply({
-                    embeds: [errorEmbed]
-                });
+                await interaction.editReply(toV2FromEmbedBuilder(errorEmbed, true));
             } else {
-                await interaction.reply({
-                    embeds: [errorEmbed],
-                    ephemeral: true
-                });
+                await interaction.reply(toV2FromEmbedBuilder(errorEmbed, true));
             }
         } catch (replyError) {
             logger.error('Erro ao enviar mensagem de erro', {
