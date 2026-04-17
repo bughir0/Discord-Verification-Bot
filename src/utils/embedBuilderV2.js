@@ -15,13 +15,11 @@ const TEXT_MAX = 4000;
 const DEFAULT_EMBED_ACCENT = 0x5865f2;
 
 export const DEFAULT_VERIFICATION_TEXT = [
-    'Este é o canal de verificação do servidor.',
+    'Bem-vindo à verificação.',
     '',
-    '→ Precisa acessar os canais?',
-    '• Clique no botão abaixo para iniciar a verificação.',
-    '• Preencha o formulário com quem você conhece no servidor.',
+    'Use o botão **Iniciar verificação**, preencha o formulário e aguarde. Pedimos essas informações para liberar seu acesso ao restante do servidor com segurança.',
     '',
-    'A equipe analisará sua solicitação em breve.'
+    'A equipe analisa os pedidos o mais breve possível.'
 ].join('\n');
 
 /**

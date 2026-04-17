@@ -80,23 +80,13 @@ async function handleSetupVerification(interaction) {
             .setValue('9b59b6')
             .setMaxLength(6);
 
-        const defaultText = [
-            'Este é o canal de verificação do servidor.',
-            '',
-            '→ Precisa acessar os canais?',
-            '• Clique no botão abaixo para iniciar a verificação.',
-            '• Preencha o formulário com quem você conhece no servidor.',
-            '',
-            'A equipe analisará sua solicitação em breve.'
-        ].join('\n');
-
         const textInput = new TextInputBuilder()
             .setCustomId('embed_text')
             .setLabel('Texto principal (opcional)')
             .setStyle(TextInputStyle.Paragraph)
             .setRequired(false)
             .setPlaceholder('Deixe vazio para usar o texto padrão')
-            .setValue(defaultText)
+            .setValue(DEFAULT_VERIFICATION_TEXT)
             .setMaxLength(4000);
 
         const row1 = new ActionRowBuilder().addComponents(bannerInput);
