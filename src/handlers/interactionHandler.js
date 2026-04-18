@@ -44,6 +44,12 @@ async function safeReply(interaction, options) {
             delete editOpts.ephemeral;
         }
         return interaction.editReply(editOpts).catch(e => {
+            if (e.code === 10008) {
+                console.warn('safeReply editReply: mensagem de resposta inexistente ou expirada', {
+                    interactionId: interaction.id
+                });
+                return null;
+            }
             console.error('Error in editReply:', e);
             throw e;
         });
@@ -476,12 +482,19 @@ async function processInteractionQueue(interaction) {
         
         const errorMessage = '❌ Ocorreu um erro ao processar esta interação.';
         
-        if (interaction.replied || interaction.deferred) {
-            await safeReply(interaction, { content: errorMessage });
-        } else {
-            await safeReply(interaction, { 
-                content: errorMessage,
-                ephemeral: true 
+        try {
+            if (interaction.replied || interaction.deferred) {
+                await safeReply(interaction, { content: errorMessage });
+            } else {
+                await safeReply(interaction, { 
+                    content: errorMessage,
+                    ephemeral: true 
+                });
+            }
+        } catch (notifyErr) {
+            console.warn('Não foi possível notificar erro ao utilizador', {
+                code: notifyErr.code,
+                message: notifyErr.message
             });
         }
     } finally {

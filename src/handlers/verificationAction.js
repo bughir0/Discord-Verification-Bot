@@ -328,11 +328,19 @@ async function handleVerificationAction(interaction) {
                         }, 60000); // 1 minuto em milissegundos
                     }
                 } catch (updateError) {
-                    logger.error('Erro ao atualizar mensagem original', {
-                        error: updateError.message,
-                        messageId: interaction.message?.id,
-                        channelId: interaction.channelId
-                    });
+                    if (updateError.code === 10008) {
+                        logger.warning('Mensagem de notificação de verificação já não existe (edit ignorado)', {
+                            messageId: interaction.message?.id,
+                            channelId: interaction.channelId
+                        });
+                    } else {
+                        logger.error('Erro ao atualizar mensagem original', {
+                            error: updateError.message,
+                            messageId: interaction.message?.id,
+                            channelId: interaction.channelId,
+                            code: updateError.code
+                        });
+                    }
                 }
             }
         } catch (updateError) {

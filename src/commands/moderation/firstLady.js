@@ -794,7 +794,7 @@ async function handleRemoveFirstLady(interaction) {
                 });
             } catch (editError) {
                 // Se não conseguir editar, tentar followUp
-                if (editError.code === 10062 || editError.message?.includes('Unknown interaction')) {
+                if (editError.code === 10062 || editError.code === 10008 || editError.message?.includes('Unknown interaction')) {
                     try {
                         await interaction.followUp({
                             ...warning({
@@ -960,7 +960,7 @@ async function showRemoveConfirmation(interaction, guild, giverId, targetMember,
                 }
             } catch (editError) {
                 // Se não conseguir editar, tentar followUp
-                if (editError.code === 10062 || editError.message?.includes('Unknown interaction')) {
+                if (editError.code === 10062 || editError.code === 10008 || editError.message?.includes('Unknown interaction')) {
                     try {
                         if (interaction.followUp) {
                             await interaction.followUp({

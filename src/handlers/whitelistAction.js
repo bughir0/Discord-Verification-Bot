@@ -73,12 +73,19 @@ async function handleWhitelistAction(interaction) {
                     });
                 }
             } catch (disableError) {
-                logger.error('Erro ao desativar botões da mensagem de whitelist', {
-                    error: disableError.message,
-                    stack: disableError.stack,
-                    interactionId: interaction.id,
-                    messageId: interaction.message?.id
-                });
+                if (disableError.code === 10008) {
+                    logger.warning('Mensagem de whitelist já não existe ao desativar botões', {
+                        interactionId: interaction.id,
+                        messageId: interaction.message?.id
+                    });
+                } else {
+                    logger.error('Erro ao desativar botões da mensagem de whitelist', {
+                        error: disableError.message,
+                        stack: disableError.stack,
+                        interactionId: interaction.id,
+                        messageId: interaction.message?.id
+                    });
+                }
                 // Não interrompe o fluxo principal da whitelist caso falhe aqui
             }
         }
@@ -554,11 +561,19 @@ async function handleWhitelistAction(interaction) {
                         }, 60000); // 1 minuto em milissegundos
                     }
                 } catch (updateError) {
-                    logger.error('Erro ao atualizar mensagem original', {
-                        error: updateError.message,
-                        messageId: interaction.message?.id,
-                        channelId: interaction.channelId
-                    });
+                    if (updateError.code === 10008) {
+                        logger.warning('Mensagem de notificação de whitelist já não existe (edit ignorado)', {
+                            messageId: interaction.message?.id,
+                            channelId: interaction.channelId
+                        });
+                    } else {
+                        logger.error('Erro ao atualizar mensagem original', {
+                            error: updateError.message,
+                            messageId: interaction.message?.id,
+                            channelId: interaction.channelId,
+                            code: updateError.code
+                        });
+                    }
                 }
             }
         } catch (updateError) {

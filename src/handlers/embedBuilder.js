@@ -905,7 +905,19 @@ export async function handleEmbedSelectMenu(interaction) {
             instructionLines: [DEFAULT_INSTRUCTION],
             actionRows: getBaseRows()
         });
-        return baseMessage.edit(mainPayload);
+        try {
+            await baseMessage.edit(mainPayload);
+        } catch (e) {
+            if (e.code === 10008) {
+                logger.warning('Construtor de embed: mensagem base já não existe; sessão atualizada só na BD', {
+                    messageId: baseMessage.id,
+                    channelId: baseMessage.channel?.id
+                });
+            } else {
+                throw e;
+            }
+        }
+        return;
     }
 
     if (customId === 'embedLoad') {
