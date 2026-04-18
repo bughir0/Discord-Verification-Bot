@@ -7,7 +7,7 @@ import { initConsoleWebhookLogger, disableConsoleWebhookForwarding, enableConsol
 
 // Inicializar replicação de console para webhook (se configurado)
 initConsoleWebhookLogger();
-// Durante o boot, não encaminhar logs para o webhook (evita spam)
+// Durante o boot, não encaminhar logs para o webhook (evita spam ou erros)
 disableConsoleWebhookForwarding();
 
 // Create a new client instance
