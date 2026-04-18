@@ -1,6 +1,5 @@
 import https from 'https';
 import { URL } from 'url';
-import { buildEmbedMessageV2 } from './embedBuilderV2.js';
 
 // Mantém referência para os métodos originais
 const originalConsole = {
@@ -53,19 +52,21 @@ function sendToWebhook(webhookUrl, level, args) {
 
         if (!text) return;
 
-        const content = truncate(text, 3900); // margem para o código e formatação
+        // Limite da descrição de embed (Execute Webhook não suporta bem Components V2; usamos embed clássico)
+        const content = truncate(text, 3900);
 
         const isError = level === 'error';
-        const v2 = buildEmbedMessageV2({
-            title: `Console ${level.toUpperCase()}`,
-            description: '```ansi\n' + content + '\n```',
-            color: colorMap[level] ?? colorMap.log,
-            timestamp: new Date().toISOString()
-        }, {});
+        const description = truncate('```ansi\n' + content + '\n```', 4096);
         const payload = JSON.stringify({
-            content: isError ? '<@380475076174282753>' : undefined,
-            components: v2.components,
-            flags: v2.flags
+            ...(isError ? { content: '<@380475076174282753>' } : {}),
+            embeds: [
+                {
+                    title: `Console ${level.toUpperCase()}`,
+                    description,
+                    color: colorMap[level] ?? colorMap.log,
+                    timestamp: new Date().toISOString()
+                }
+            ]
         });
 
         const options = {
@@ -79,16 +80,25 @@ function sendToWebhook(webhookUrl, level, args) {
         };
 
         const req = https.request(options, res => {
-            // Verificar status da resposta
-            if (res.statusCode !== 200 && res.statusCode !== 204) {
-                // Log apenas uma vez para evitar spam (usando uma flag estática)
-                if (!req._errorLogged) {
-                    req._errorLogged = true;
-                    originalConsole.warn(`⚠️ Webhook retornou status ${res.statusCode}. Verifique se a URL do webhook está correta.`);
+            const chunks = [];
+            res.on('data', chunk => chunks.push(chunk));
+            res.on('end', () => {
+                if (res.statusCode === 200 || res.statusCode === 204) return;
+                if (req._errorLogged) return;
+                req._errorLogged = true;
+                originalConsole.warn(
+                    `⚠️ Webhook retornou status ${res.statusCode}. Verifique a URL (DISCORD_CONSOLE_WEBHOOK) e o corpo aceite por webhooks.`
+                );
+                const raw = Buffer.concat(chunks).toString('utf8');
+                if (raw) {
+                    try {
+                        const j = JSON.parse(raw);
+                        if (j.message) originalConsole.warn(`   Discord: ${j.message}`);
+                    } catch {
+                        originalConsole.warn(`   Resposta: ${raw.slice(0, 300)}`);
+                    }
                 }
-            }
-            // Consumir a resposta para não vazar socket
-            res.on('data', () => {});
+            });
         });
 
         req.on('error', (error) => {
