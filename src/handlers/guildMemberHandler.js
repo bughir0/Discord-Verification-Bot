@@ -41,7 +41,7 @@ export async function handleGuildMemberAdd(member) {
                 iconURL: member.guild.iconURL({ dynamic: true }) || undefined 
             })
             .setTitle(`👋 Bem-vindo(a), ${member.user.username}!`)
-            .setDescription(`**${member.user}** acabou de entrar no servidor`)
+            .setDescription(`**<@${member.id}>** acabou de entrar no servidor`)
             .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
             .addFields(
                 { 
@@ -159,7 +159,7 @@ export async function handleGuildMemberUpdate(oldMember, newMember) {
                                 iconURL: newMember.user.displayAvatarURL({ dynamic: true }),
                             })
                             .setDescription(
-                                `**O membro:** ${newMember.user} adicionou impulso ao servidor <a:LHU3_B1:806688854111289405> !`
+                                `**O membro:** <@${newMember.id}> adicionou impulso ao servidor <a:LHU3_B1:806688854111289405> !`
                             )
                             .addFields({
                                 name: '**Data de adição do boost:**',
@@ -242,7 +242,7 @@ export async function handleGuildMemberUpdate(oldMember, newMember) {
                                 iconURL: newMember.user.displayAvatarURL({ dynamic: true }),
                             })
                             .setDescription(
-                                `**O membro:** ${newMember.user} removeu o impulso do servidor <a:LHU3_B1:806688854111289405> !`
+                                `**O membro:** <@${newMember.id}> removeu o impulso do servidor <a:LHU3_B1:806688854111289405> !`
                             )
                             .addFields({
                                 name: '**Data de remoção do boost:**',
@@ -307,7 +307,7 @@ export async function handleGuildMemberUpdate(oldMember, newMember) {
                         iconURL: newMember.guild.iconURL({ dynamic: true }) || undefined 
                     })
                     .setTitle(`📝 ${newMember.user.username} alterou o display name`)
-                    .setDescription(`**${newMember.user}** alterou seu nome de exibição no servidor`)
+                    .setDescription(`**<@${newMember.id}>** alterou seu nome de exibição no servidor`)
                     .setThumbnail(newMember.user.displayAvatarURL({ dynamic: true, size: 256 }))
                     .addFields(
                         {
@@ -413,7 +413,7 @@ export async function handleGuildMemberUpdate(oldMember, newMember) {
                     iconURL: newMember.guild.iconURL({ dynamic: true }) || undefined 
                 })
                 .setTitle(`🔄 ${newMember.user.username} teve cargos atualizados`)
-                .setDescription(`**${newMember.user}** teve alterações em seus cargos`)
+                .setDescription(`**<@${newMember.id}>** teve alterações em seus cargos`)
                 .setThumbnail(newMember.user.displayAvatarURL({ dynamic: true, size: 256 }))
                 .setTimestamp();
 
@@ -572,7 +572,7 @@ export async function handleGuildMemberRemove(member) {
                 iconURL: member.guild.iconURL({ dynamic: true }) || undefined 
             })
             .setTitle(`👋 ${member.user.username} saiu`)
-            .setDescription(`**${member.user}** deixou o servidor`)
+            .setDescription(`**<@${member.id}>** deixou o servidor`)
             .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
             .addFields(
                 { 

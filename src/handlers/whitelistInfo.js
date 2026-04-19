@@ -18,7 +18,7 @@ export async function handleWhitelistInfo(interaction) {
             const embed = new EmbedBuilder()
                 .setColor(colors.warning || 0xf39c12)
                 .setTitle('📋 Informações de Whitelist')
-                .setDescription(`${targetUser} não possui uma whitelist registrada neste servidor.`)
+                .setDescription(`<@${targetUser.id}> não possui uma whitelist registrada neste servidor.`)
                 .setFooter({
                     text: `Solicitado por ${interaction.user.tag}`,
                     iconURL: interaction.user.displayAvatarURL({ dynamic: true })
@@ -43,12 +43,12 @@ export async function handleWhitelistInfo(interaction) {
         const embed = new EmbedBuilder()
             .setColor(whitelist.status === 'approved' ? (colors.success || 0x2ecc71) : (colors.warning || 0xf39c12))
             .setTitle('📋 Informações da Whitelist')
-            .setDescription(`Informações da whitelist de ${targetUser}:`)
+            .setDescription(`Informações da whitelist de <@${targetUser.id}>:`)
             .setThumbnail(targetUser.displayAvatarURL({ dynamic: true, size: 256 }))
             .addFields(
                 {
                     name: '👤 Usuário',
-                    value: `${targetUser} \n**Tag:** ${targetUser.tag}\n**ID:** \`${targetUser.id}\``,
+                    value: `<@${targetUser.id}>\n**Tag:** ${targetUser.tag}\n**ID:** \`${targetUser.id}\``,
                     inline: false
                 },
                 {

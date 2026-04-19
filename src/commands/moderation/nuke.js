@@ -146,7 +146,7 @@ export async function handleNukeCommand(interaction) {
         const adminEmbed = new EmbedBuilder()
             .setColor(0xff0000)
             .setTitle('💣 Canal Resetado')
-            .setDescription(`**Canal resetado por:** ${interaction.user} (\`${interaction.user.tag}\`)`)
+            .setDescription(`**Canal resetado por:** <@${interaction.user.id}> (\`${interaction.user.tag}\`)`)
             .addFields(
                 {
                     name: '🕐 Data/Hora',

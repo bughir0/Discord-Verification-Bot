@@ -119,7 +119,7 @@ async function handleWhitelistAction(interaction) {
                             iconURL: interaction.guild.iconURL({ dynamic: true }) || undefined 
                         })
                         .setTitle('❌ Sua whitelist foi recusada')
-                        .setDescription(`${member}, infelizmente sua solicitação de whitelist foi **recusada** pela equipe.`)
+                        .setDescription(`<@${member.id}>, infelizmente sua solicitação de whitelist foi **recusada** pela equipe.`)
                         .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
                         .addFields(
                             {
@@ -134,7 +134,7 @@ async function handleWhitelistAction(interaction) {
                             },
                             {
                                 name: '🛠️ Responsável',
-                                value: `${staffMember} (${staffMember.tag})`,
+                                value: `<@${staffMember.id}> (${staffMember.tag})`,
                                 inline: true
                             },
                             {
@@ -155,7 +155,7 @@ async function handleWhitelistAction(interaction) {
                         .setTimestamp();
 
                     const message = await whitelistResultChannel.send({
-                        ...mergeEmbedWithRows(denialEmbed, [], { content: `${member}` }),
+                        ...mergeEmbedWithRows(denialEmbed, [], { content: `<@${member.id}>` }),
                         allowedMentions: { users: [member.id] }
                     });
 
@@ -313,7 +313,7 @@ async function handleWhitelistAction(interaction) {
                             iconURL: interaction.guild.iconURL({ dynamic: true }) || undefined 
                         })
                         .setTitle('✅ Sua whitelist foi aprovada!')
-                        .setDescription(`${member}, sua solicitação de whitelist foi **aprovada** pela equipe!`)
+                        .setDescription(`<@${member.id}>, sua solicitação de whitelist foi **aprovada** pela equipe!`)
                         .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
                         .addFields(
                             {
@@ -335,7 +335,7 @@ async function handleWhitelistAction(interaction) {
                             },
                             {
                                 name: '🛠️ Aprovado por',
-                                value: `${staffMember} (${staffMember.tag})`,
+                                value: `<@${staffMember.id}> (${staffMember.tag})`,
                                 inline: true
                             },
                             {
@@ -351,7 +351,7 @@ async function handleWhitelistAction(interaction) {
                         .setTimestamp();
 
                     const message = await whitelistResultChannel.send({
-                        ...mergeEmbedWithRows(approvalEmbed, [], { content: `🎉 ${member}` }),
+                        ...mergeEmbedWithRows(approvalEmbed, [], { content: `🎉 <@${member.id}>` }),
                         allowedMentions: { users: [member.id] }
                     });
 
@@ -429,7 +429,11 @@ async function handleWhitelistAction(interaction) {
                         iconURL: interaction.guild.iconURL({ dynamic: true }) || undefined 
                     })
                     .setTitle(`${isApproval ? '<a:sucesso:1443149628085244036>' : '<a:erro:1443149642580758569>'} Whitelist ${statusTitle}`)
-                    .setDescription(`**<@${member?.user?.id || 'Usuário Desconhecido'}>** teve sua whitelist ${isApproval ? 'aprovada' : 'recusada'}`)
+                    .setDescription(
+                        member?.user
+                            ? `**<@${member.user.id}>** teve sua whitelist ${isApproval ? 'aprovada' : 'recusada'}`
+                            : `**Usuário** (\`${userId}\`) teve sua whitelist ${isApproval ? 'aprovada' : 'recusada'}`
+                    )
                     .setThumbnail(member?.user.displayAvatarURL({ dynamic: true, size: 256 }) || null)
                     .addFields(
                         {

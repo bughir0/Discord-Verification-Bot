@@ -328,7 +328,7 @@ export function buildWhitelistStaffMessageV2({
             iconURL: guild.iconURL({ dynamic: true }) || undefined
         })
         .setTitle(isPending ? '🎮 Whitelist Pendente' : `${statusEmoji} Whitelist ${statusTitle}`)
-        .setDescription(`**${member.user.tag}** solicitou whitelist no servidor`)
+        .setDescription(`**<@${member.id}>** solicitou whitelist no servidor`)
         .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
         .addFields(
             {

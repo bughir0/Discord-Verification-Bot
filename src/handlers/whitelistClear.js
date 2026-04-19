@@ -193,7 +193,7 @@ async function handleWhitelistClearConfirm(interaction) {
                 },
                 {
                     name: '🛠️ Limpado por',
-                    value: `${interaction.user} (${interaction.user.tag})`,
+                    value: `<@${interaction.user.id}> (${interaction.user.tag})`,
                     inline: true
                 },
                 {
@@ -249,7 +249,7 @@ async function handleWhitelistClearConfirm(interaction) {
                         },
                         {
                             name: '🛠️ Limpado por',
-                            value: `${interaction.user} (${interaction.user.tag})`,
+                            value: `<@${interaction.user.id}> (${interaction.user.tag})`,
                             inline: true
                         },
                         {

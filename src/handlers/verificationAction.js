@@ -79,7 +79,7 @@ async function handleVerificationAction(interaction) {
                             iconURL: interaction.guild.iconURL({ dynamic: true }) || undefined 
                         })
                         .setTitle('❌ Sua verificação foi recusada')
-                        .setDescription(`${member}, infelizmente sua solicitação de verificação foi **recusada** pela equipe.`)
+                        .setDescription(`<@${member.id}>, infelizmente sua solicitação de verificação foi **recusada** pela equipe.`)
                         .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
                         .addFields(
                             {
@@ -89,7 +89,7 @@ async function handleVerificationAction(interaction) {
                             },
                             {
                                 name: '🛠️ Responsável',
-                                value: `${staffMember} (${staffMember.tag})`,
+                                value: `<@${staffMember.id}> (${staffMember.tag})`,
                                 inline: true
                             },
                             {
@@ -110,7 +110,7 @@ async function handleVerificationAction(interaction) {
                         .setTimestamp();
 
                     const message = await verificationChannel.send({
-                        ...mergeEmbedWithRows(denialEmbed, [], { content: `${member}` }),
+                        ...mergeEmbedWithRows(denialEmbed, [], { content: `<@${member.id}>` }),
                         allowedMentions: { users: [member.id] }
                     });
 
@@ -202,7 +202,11 @@ async function handleVerificationAction(interaction) {
                     iconURL: interaction.guild.iconURL({ dynamic: true }) || undefined 
                 })
                     .setTitle(`${isApproval ? '<a:sucesso:1443149628085244036>' : '<a:erro:1443149642580758569>'} Verificação ${statusTitle}`)
-                .setDescription(`**<@${member?.user?.id || 'Usuário Desconhecido'}>** teve sua verificação ${isApproval ? 'aprovada' : 'recusada'}`)
+                .setDescription(
+                    member?.user
+                        ? `**<@${member.user.id}>** teve sua verificação ${isApproval ? 'aprovada' : 'recusada'}`
+                        : `**Usuário** (\`${userId}\`) teve sua verificação ${isApproval ? 'aprovada' : 'recusada'}`
+                )
                 .setThumbnail(member?.user.displayAvatarURL({ dynamic: true, size: 256 }) || null)
                 .addFields(
                     {

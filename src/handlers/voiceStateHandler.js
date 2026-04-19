@@ -132,7 +132,7 @@ export async function handleVoiceStateUpdate(oldState, newState) {
                 iconURL: guild.iconURL({ dynamic: true }) || undefined 
             })
             .setTitle(`🔊 ${member.user.username} entrou na call`)
-            .setDescription(`**${member.user}** conectou-se ao canal de voz`)
+            .setDescription(`**<@${member.id}>** conectou-se ao canal de voz`)
             .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
             .addFields(
                 { 
@@ -226,8 +226,8 @@ export async function handleVoiceStateUpdate(oldState, newState) {
                 })
                 .setTitle(`🔇 ${member.user.username} saiu da call${memberStillInGuild ? '' : ' e do servidor'}`)
                 .setDescription(memberStillInGuild 
-                    ? `**${member.user}** desconectou-se do canal de voz`
-                    : `**${member.user}** saiu do servidor enquanto estava em call`)
+                    ? `**<@${member.id}>** desconectou-se do canal de voz`
+                    : `**<@${member.id}>** saiu do servidor enquanto estava em call`)
                 .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
                 .addFields(
                     { 
@@ -304,8 +304,8 @@ export async function handleVoiceStateUpdate(oldState, newState) {
             })
             .setTitle(`🔇 ${member.user.username} saiu da call${memberStillInGuild ? '' : ' e do servidor'}`)
             .setDescription(memberStillInGuild 
-                ? `**${member.user}** desconectou-se do canal de voz`
-                : `**${member.user}** saiu do servidor enquanto estava em call`)
+                ? `**<@${member.id}>** desconectou-se do canal de voz`
+                : `**<@${member.id}>** saiu do servidor enquanto estava em call`)
             .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
             .addFields(
                 { 
@@ -405,7 +405,7 @@ export async function handleVoiceStateUpdate(oldState, newState) {
                 iconURL: guild.iconURL({ dynamic: true }) || undefined 
             })
             .setTitle(`🔄 ${member.user.username} trocou de call`)
-            .setDescription(`**${member.user}** mudou de canal de voz`)
+            .setDescription(`**<@${member.id}>** mudou de canal de voz`)
             .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
             .addFields(
                 { 

@@ -50,7 +50,7 @@ export async function logCommandError(interaction, commandName, error) {
             fields: [
                 {
                     name: '👤 Usuário',
-                    value: `${interaction.user} (\`${interaction.user.tag}\`)`,
+                    value: `<@${interaction.user.id}> (\`${interaction.user.tag}\`)`,
                     inline: true
                 },
                 {

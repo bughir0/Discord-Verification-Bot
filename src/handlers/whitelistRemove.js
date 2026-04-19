@@ -46,7 +46,7 @@ async function handleWhitelistRemove(interaction) {
             const embed = new EmbedBuilder()
                 .setColor(colors.warning || 0xf39c12)
                 .setTitle('⚠️ Whitelist Não Encontrada')
-                .setDescription(`O usuário ${targetUser} não possui uma whitelist registrada.`)
+                .setDescription(`O usuário <@${targetUser.id}> não possui uma whitelist registrada.`)
                 .setFooter({ text: 'Aviso', iconURL: interaction.guild.iconURL() })
                 .setTimestamp();
 
@@ -59,7 +59,7 @@ async function handleWhitelistRemove(interaction) {
             const embed = new EmbedBuilder()
                 .setColor(colors.warning || 0xf39c12)
                 .setTitle('⚠️ Whitelist Não Está Aprovada')
-                .setDescription(`A whitelist de ${targetUser} está com status: **${whitelist.status}**\n\nApenas whitelists aprovadas podem ser removidas.`)
+                .setDescription(`A whitelist de <@${targetUser.id}> está com status: **${whitelist.status}**\n\nApenas whitelists aprovadas podem ser removidas.`)
                 .addFields({
                     name: '🎮 Nome de Usuário Minecraft',
                     value: `\`${whitelist.minecraftUsername || 'Não informado'}\``,
@@ -76,11 +76,11 @@ async function handleWhitelistRemove(interaction) {
         const confirmEmbed = new EmbedBuilder()
             .setColor(colors.danger || 0xe74c3c)
             .setTitle('⚠️ Confirmar Remoção')
-            .setDescription(`Tem certeza que deseja **remover** a whitelist de ${targetUser}?`)
+            .setDescription(`Tem certeza que deseja **remover** a whitelist de <@${targetUser.id}>?`)
             .addFields(
                 {
                     name: '👤 Usuário',
-                    value: `${targetUser} (${targetUser.tag})`,
+                    value: `<@${targetUser.id}> (${targetUser.tag})`,
                     inline: true
                 },
                 {
@@ -336,11 +336,15 @@ export async function handleWhitelistRemoveConfirm(interaction) {
         db.deleteWhitelist(targetUserId);
 
         const colors = getColors();
-        const userDisplay = targetUser ? `${targetUser} (${targetUser.tag})` : `Usuário Desconhecido (${targetUserId})`;
+        const userDisplay = targetUser ? `<@${targetUser.id}> (${targetUser.tag})` : `Usuário Desconhecido (\`${targetUserId}\`)`;
         const embed = new EmbedBuilder()
             .setColor(colors.success || 0x2ecc71)
             .setTitle('<a:sucesso:1443149628085244036> Whitelist Removida')
-            .setDescription(`A whitelist de **${userDisplay}** foi removida com sucesso.`)
+            .setDescription(
+                targetUser
+                    ? `A whitelist de **<@${targetUser.id}>** foi removida com sucesso.`
+                    : `A whitelist do usuário \`${targetUserId}\` foi removida com sucesso.`
+            )
             .setThumbnail(targetUser?.displayAvatarURL({ dynamic: true, size: 256 }) || interaction.guild.iconURL({ dynamic: true }))
             .addFields(
                 {
@@ -365,7 +369,7 @@ export async function handleWhitelistRemoveConfirm(interaction) {
                 },
                 {
                     name: '🛠️ Removido por',
-                    value: `${interaction.user} (${interaction.user.tag})`,
+                    value: `<@${interaction.user.id}> (${interaction.user.tag})`,
                     inline: true
                 },
                 {
@@ -419,12 +423,12 @@ export async function handleWhitelistRemoveConfirm(interaction) {
                         iconURL: interaction.guild.iconURL({ dynamic: true }) || undefined 
                     })
                     .setTitle('🗑️ Whitelist Removida')
-                    .setDescription(`**${targetUser.tag}** teve sua whitelist removida`)
+                    .setDescription(`<@${targetUser.id}> teve sua whitelist removida`)
                     .setThumbnail(targetUser.displayAvatarURL({ dynamic: true, size: 256 }) || null)
                     .addFields(
                         {
                             name: '👤 Usuário',
-                            value: `${targetUser} (${targetUser.tag})\n**ID:** \`${targetUser.id}\``,
+                            value: `<@${targetUser.id}> (${targetUser.tag})\n**ID:** \`${targetUser.id}\``,
                             inline: true
                         },
                         {
@@ -434,7 +438,7 @@ export async function handleWhitelistRemoveConfirm(interaction) {
                         },
                         {
                             name: '🛠️ Removido por',
-                            value: `${interaction.user} (${interaction.user.tag})`,
+                            value: `<@${interaction.user.id}> (${interaction.user.tag})`,
                             inline: true
                         },
                         {
