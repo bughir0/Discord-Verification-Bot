@@ -5,7 +5,6 @@ import {
     ChannelSelectMenuBuilder,
     ChannelType,
     EmbedBuilder,
-    MessageFlags,
     ModalBuilder,
     StringSelectMenuBuilder,
     StringSelectMenuOptionBuilder,
@@ -13,10 +12,22 @@ import {
     TextInputStyle
 } from 'discord.js';
 import { database as db } from '../database/database.js';
-import { buildEmbedMessageV2 } from '../utils/embedBuilderV2.js';
 import logger from '../utils/logger.js';
 
 const DEFAULT_INSTRUCTION = 'Utilize os botões abaixo para editar a embed.';
+
+/**
+ * Mensagem do construtor de embed: texto de instrução + embed + componentes (ephemeral).
+ */
+function buildEmbedConstructorPayload(embedBuilder, { instructionLines = [DEFAULT_INSTRUCTION], actionRows = [], ephemeral = true } = {}) {
+    const content = instructionLines.filter(Boolean).join('\n\n');
+    return {
+        content: content || DEFAULT_INSTRUCTION,
+        embeds: [embedBuilder],
+        components: actionRows,
+        ephemeral
+    };
+}
 
 /** Remove título/descrição/campos de dica do embed de exemplo */
 export function stripHintContent(embed) {
@@ -123,10 +134,10 @@ function updateInteractionEmbed(interaction, embed, extra = {}) {
         components = getBaseRows(),
         ...rest
     } = extra;
-    const payload = buildEmbedMessageV2(cleaned.toJSON(), {
-        ephemeral: true,
+    const payload = buildEmbedConstructorPayload(cleaned, {
         instructionLines,
-        actionRows: components
+        actionRows: components,
+        ephemeral: true
     });
     return interaction.update({ ...payload, ...rest });
 }
@@ -138,10 +149,10 @@ function editInteractionEmbed(interaction, embed, extra = {}) {
         components = getBaseRows(),
         ...rest
     } = extra;
-    const payload = buildEmbedMessageV2(cleaned.toJSON(), {
-        ephemeral: true,
+    const payload = buildEmbedConstructorPayload(cleaned, {
         instructionLines,
-        actionRows: components
+        actionRows: components,
+        ephemeral: true
     });
     return interaction.editReply({ ...payload, ...rest });
 }
@@ -638,10 +649,10 @@ export async function handleEmbedButton(interaction) {
                     .setStyle(ButtonStyle.Danger)
             );
             const current = loadSessionEmbed(interaction);
-            const payload = buildEmbedMessageV2(current.toJSON(), {
-                ephemeral: true,
+            const payload = buildEmbedConstructorPayload(current, {
                 instructionLines: ['Selecione uma embed salva para carregar.'],
-                actionRows: [row, cancelRow]
+                actionRows: [row, cancelRow],
+                ephemeral: true
             });
             return interaction.update(payload);
         }
@@ -658,10 +669,10 @@ export async function handleEmbedButton(interaction) {
             if (!embed) {
                 return interaction.reply({ content: '❌ Sessão inválida.', ephemeral: true });
             }
-            const payload = buildEmbedMessageV2(embed.toJSON(), {
-                ephemeral: true,
+            const payload = buildEmbedConstructorPayload(embed, {
                 instructionLines: [DEFAULT_INSTRUCTION],
-                actionRows: getBaseRows()
+                actionRows: getBaseRows(),
+                ephemeral: true
             });
             return interaction.update(payload);
         }
@@ -861,10 +872,9 @@ export async function handleEmbedSelectMenu(interaction) {
             });
         }
 
-        const payload = buildEmbedMessageV2(session.embedData, { ephemeral: false });
+        const outEmbed = EmbedBuilder.from(session.embedData);
         const sent = await channel.send({
-            components: payload.components,
-            flags: MessageFlags.IsComponentsV2
+            embeds: [outEmbed]
         });
         return interaction.update({
             content: `<a:sucesso:1443149628085244036> Mensagem enviada em ${channel} | [Ver mensagem](${sent.url})`,
@@ -900,10 +910,10 @@ export async function handleEmbedSelectMenu(interaction) {
             components: []
         });
 
-        const mainPayload = buildEmbedMessageV2(embed.toJSON(), {
-            ephemeral: true,
+        const mainPayload = buildEmbedConstructorPayload(embed, {
             instructionLines: [DEFAULT_INSTRUCTION],
-            actionRows: getBaseRows()
+            actionRows: getBaseRows(),
+            ephemeral: true
         });
         try {
             await baseMessage.edit(mainPayload);
@@ -1024,13 +1034,11 @@ export async function handleEmbedSelectMenu(interaction) {
         }
 
         try {
-            const payload = buildEmbedMessageV2(session.embedData, { ephemeral: false });
+            const webhookEmbed = EmbedBuilder.from(session.embedData);
             await webhook.send({
-                components: payload.components,
-                flags: MessageFlags.IsComponentsV2,
+                embeds: [webhookEmbed],
                 username: interaction.user.username,
-                avatarURL: interaction.user.displayAvatarURL(),
-                withComponents: true
+                avatarURL: interaction.user.displayAvatarURL()
             });
 
             const channel = webhook.channelId

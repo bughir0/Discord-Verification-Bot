@@ -1,5 +1,5 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { mergeV2WithRows, toV2FromEmbedBuilder } from '../utils/embedBuilderV2.js';
+import { mergeEmbedWithRows, toEmbedReply } from '../utils/embedBuilderV2.js';
 
 import { getColors, getChannelId } from '../utils/configHelper.js';
 import logger from '../utils/logger.js';
@@ -27,7 +27,7 @@ export async function handleSetupWhitelistModal(interaction) {
                 .setFooter({ text: 'Erro', iconURL: interaction.guild.iconURL() })
                 .setTimestamp();
 
-            return await interaction.editReply(toV2FromEmbedBuilder(errorEmbed, true));
+            return await interaction.editReply(toEmbedReply(errorEmbed, true));
         }
 
         // Criar embed customizado
@@ -144,9 +144,7 @@ export async function handleSetupWhitelistModal(interaction) {
             );
 
         // Enviar mensagem
-        await channel.send({
-            ...mergeV2WithRows(toV2FromEmbedBuilder(embed, true), [row])
-        });
+        await channel.send(mergeEmbedWithRows(embed, [row]));
 
         let successDescription = 'Mensagem de whitelist configurada com sucesso!';
         if (willUseConfigChannel && whitelistChannel) {
@@ -166,7 +164,7 @@ export async function handleSetupWhitelistModal(interaction) {
             .setFooter({ text: 'Configuração', iconURL: interaction.guild.iconURL() })
             .setTimestamp();
 
-        await interaction.editReply(toV2FromEmbedBuilder(successEmbed, true));
+        await interaction.editReply(toEmbedReply(successEmbed, true));
 
         logger.info('Mensagem de whitelist configurada via modal', {
             guildId: interaction.guild.id,
@@ -190,9 +188,9 @@ export async function handleSetupWhitelistModal(interaction) {
 
         try {
             if (interaction.replied || interaction.deferred) {
-                await interaction.editReply(toV2FromEmbedBuilder(errorEmbed, true));
+                await interaction.editReply(toEmbedReply(errorEmbed, true));
             } else {
-                await interaction.reply(toV2FromEmbedBuilder(errorEmbed, true));
+                await interaction.reply(toEmbedReply(errorEmbed, true));
             }
         } catch (replyError) {
             console.error('Erro ao enviar mensagem de erro:', replyError);

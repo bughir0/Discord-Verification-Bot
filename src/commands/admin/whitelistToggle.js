@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { database as db } from '../../database/database.js';
-import { mergeV2WithRows, toV2FromEmbedBuilder } from '../../utils/embedBuilderV2.js';
+import { mergeEmbedWithRows, toEmbedReply } from '../../utils/embedBuilderV2.js';
 import { success, error, info } from '../../utils/responseUtils.js';
 import logger from '../../utils/logger.js';
 import { getColors } from '../../utils/configHelper.js';
@@ -98,7 +98,7 @@ async function handleWhitelistActivate(interaction, guildId) {
         );
 
     return await interaction.reply({
-        ...mergeV2WithRows(toV2FromEmbedBuilder(confirmEmbed, true), [row])
+        ...mergeEmbedWithRows(toEmbedReply(confirmEmbed, true), [row])
     });
 }
 
@@ -143,7 +143,7 @@ async function handleWhitelistDeactivate(interaction, guildId) {
         );
 
     return await interaction.reply({
-        ...mergeV2WithRows(toV2FromEmbedBuilder(confirmEmbed, true), [row])
+        ...mergeEmbedWithRows(toEmbedReply(confirmEmbed, true), [row])
     });
 }
 

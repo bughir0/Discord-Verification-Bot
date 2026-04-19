@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js';
 import { createModerationEmbed, logModerationAction } from '../../utils/moderationUtils.js';
-import { mergeV2WithRows, toV2FromEmbedBuilder } from '../../utils/embedBuilderV2.js';
+import { mergeEmbedWithRows, toEmbedReply } from '../../utils/embedBuilderV2.js';
 import { success, error, warning } from '../../utils/responseUtils.js';
 import logger from '../../utils/logger.js';
 import { updateWithAutoDelete, replyWithAutoDelete } from '../../utils/autoDeleteMessage.js';
@@ -145,7 +145,7 @@ export async function handleBanCommand(interaction) {
         );
 
     // Enviar mensagem de confirmação
-    await interaction.reply(mergeV2WithRows(confirmEmbed, [confirmRow]));
+    await interaction.reply(mergeEmbedWithRows(confirmEmbed, [confirmRow]));
 
     // Buscar a mensagem de confirmação
     const confirmationMessage = await interaction.fetchReply();
@@ -171,7 +171,7 @@ export async function handleBanCommand(interaction) {
                 .setTimestamp();
 
             // Tentar enviar DM, mas não bloquear se falhar
-            await targetUser.send({ ...toV2FromEmbedBuilder(dmEmbed) })
+            await targetUser.send({ ...toEmbedReply(dmEmbed) })
                 .catch(error => {
                     if (error.code === 50007) {
                         // Usuário tem DMs desativadas ou bloqueou o bot

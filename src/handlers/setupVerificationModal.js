@@ -1,4 +1,3 @@
-import { MessageFlags } from 'discord.js';
 import { getColors, getChannelId } from '../utils/configHelper.js';
 import logger from '../utils/logger.js';
 import { buildVerificationMessageV2, buildSetupFeedbackV2 } from '../utils/embedBuilderV2.js';
@@ -8,7 +7,7 @@ import { buildVerificationMessageV2, buildSetupFeedbackV2 } from '../utils/embed
  */
 export async function handleSetupVerificationModal(interaction) {
     try {
-        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+        await interaction.deferReply({ ephemeral: true });
 
         const bannerUrl = interaction.fields.getTextInputValue('embed_banner')?.trim() || '';
         const colorHex = interaction.fields.getTextInputValue('embed_color')?.trim() || '9b59b6';
@@ -78,7 +77,7 @@ export async function handleSetupVerificationModal(interaction) {
             userId: interaction.user.id
         });
 
-        const { components, flags } = buildSetupFeedbackV2({
+        const errPayload = buildSetupFeedbackV2({
             title: 'Erro',
             description: 'Ocorreu um erro ao configurar a mensagem de verificação.',
             accentColor: getColors().danger
@@ -86,15 +85,9 @@ export async function handleSetupVerificationModal(interaction) {
 
         try {
             if (interaction.replied || interaction.deferred) {
-                await interaction.editReply({
-                    components,
-                    flags
-                });
+                await interaction.editReply(errPayload);
             } else {
-                await interaction.reply({
-                    components,
-                    flags
-                });
+                await interaction.reply(errPayload);
             }
         } catch (replyError) {
             console.error('Erro ao enviar mensagem de erro:', replyError);

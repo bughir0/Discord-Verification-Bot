@@ -26,14 +26,14 @@ async function createVerificationMessage(interaction) {
     }
     const channel = verificationChannel || interaction.channel;
     const colors = getColors();
-    const { components, flags } = buildVerificationMessageV2({
+    const payload = buildVerificationMessageV2({
         bodyText: DEFAULT_VERIFICATION_TEXT,
         accentColor: colors.primary || 0x9b59b6,
         bannerUrl: null,
         guild: channel.guild,
         client: interaction.client
     });
-    return channel.send({ components, flags });
+    return channel.send(payload);
 }
 
 async function handleSetupVerification(interaction) {
@@ -50,12 +50,11 @@ async function handleSetupVerification(interaction) {
 
         // Verificar permissões primeiro
         if (!interaction.member.permissions.has('ADMINISTRATOR')) {
-            const { components, flags } = buildSetupFeedbackV2({
+            return await interaction.reply(buildSetupFeedbackV2({
                 title: 'Acesso negado',
                 description: 'Você precisa ser administrador para usar este comando!',
                 accentColor: getColors().danger
-            });
-            return await interaction.reply({ components, flags });
+            }));
         }
 
         // Modal simples: apenas banner (e opcionalmente cor)
@@ -105,7 +104,7 @@ async function handleSetupVerification(interaction) {
             userId: interaction.user.id
         });
 
-        const { components, flags } = buildSetupFeedbackV2({
+        const errPayload = buildSetupFeedbackV2({
             title: 'Erro',
             description: 'Ocorreu um erro ao abrir o formulário de configuração.',
             accentColor: getColors().danger
@@ -113,9 +112,9 @@ async function handleSetupVerification(interaction) {
 
         try {
             if (interaction.replied || interaction.deferred) {
-                await interaction.editReply({ components, flags });
+                await interaction.editReply(errPayload);
             } else {
-                await interaction.reply({ components, flags });
+                await interaction.reply(errPayload);
             }
         } catch (replyError) {
             console.error('Erro ao enviar mensagem de erro:', replyError);

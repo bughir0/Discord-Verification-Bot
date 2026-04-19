@@ -2,20 +2,12 @@ import {
     ActionRowBuilder,
     ButtonBuilder,
     ButtonStyle,
-    ContainerBuilder,
-    EmbedBuilder,
-    MediaGalleryBuilder,
-    MediaGalleryItemBuilder,
-    MessageFlags,
-    SectionBuilder,
-    TextDisplayBuilder,
-    ThumbnailBuilder
+    EmbedBuilder
 } from 'discord.js';
 import { getColors } from './configHelper.js';
 import { truncateText, validateFields } from './messageTextUtils.js';
 
 const TEXT_MAX = 4000;
-const DEFAULT_EMBED_ACCENT = 0x5865f2;
 
 export const DEFAULT_VERIFICATION_TEXT = [
     'Bem-vindo à verificação.',
@@ -26,7 +18,7 @@ export const DEFAULT_VERIFICATION_TEXT = [
 ].join('\n');
 
 /**
- * Parte texto em blocos compatíveis com Text Display (Discord).
+ * Parte texto longo em blocos (útil para descrições).
  * @param {string} str
  * @param {number} [max]
  * @returns {string[]}
@@ -43,14 +35,42 @@ export function chunkText(str, max = TEXT_MAX) {
 }
 
 /**
- * Mensagem de verificação no canal (Components V2).
- * @param {Object} opts
- * @param {string} [opts.bodyText]
- * @param {number} opts.accentColor
- * @param {string|null} [opts.bannerUrl]
- * @param {import('discord.js').Guild} opts.guild
- * @param {import('discord.js').Client} [opts.client]
- * @returns {{ components: unknown[], flags: number }}
+ * Payload clássico para reply/editReply com embed efémera ou não.
+ * @param {import('discord.js').EmbedBuilder} embedBuilder
+ * @param {boolean} [ephemeral]
+ * @returns {{ embeds: import('discord.js').EmbedBuilder[], ephemeral?: boolean }}
+ */
+export function toEmbedReply(embedBuilder, ephemeral = false) {
+    if (ephemeral) {
+        return { embeds: [embedBuilder], ephemeral: true };
+    }
+    return { embeds: [embedBuilder] };
+}
+
+/**
+ * Junta embed(s) com filas de componentes e opcionalmente content (ex.: ping staff).
+ * Aceita um EmbedBuilder ou um payload já retornado por toEmbedReply / buildStandardCardV2 (responseUtils).
+ * @param {import('discord.js').EmbedBuilder|{ embeds: import('discord.js').EmbedBuilder[], ephemeral?: boolean }} embedOrPayload
+ * @param {import('discord.js').ActionRowBuilder[]} rows
+ * @param {{ content?: string }} [options]
+ */
+export function mergeEmbedWithRows(embedOrPayload, rows, options = {}) {
+    const { content } = options;
+    const base = embedOrPayload && typeof embedOrPayload === 'object' && Array.isArray(embedOrPayload.embeds)
+        ? { ...embedOrPayload }
+        : { embeds: [embedOrPayload] };
+    const out = {
+        ...base,
+        components: rows
+    };
+    if (content != null && String(content).trim() !== '') {
+        out.content = content;
+    }
+    return out;
+}
+
+/**
+ * Mensagem de verificação no canal (embed + botão).
  */
 export function buildVerificationMessageV2({
     bodyText = DEFAULT_VERIFICATION_TEXT,
@@ -61,188 +81,48 @@ export function buildVerificationMessageV2({
 }) {
     const serverIconUrl = guild.iconURL({ extension: 'png', size: 256 })
         || (client?.user?.displayAvatarURL && client.user.displayAvatarURL({ extension: 'png', size: 256 }));
-    const section = new SectionBuilder()
-        .addTextDisplayComponents(
-            new TextDisplayBuilder().setContent('# Sistema de Verificação'),
-            new TextDisplayBuilder().setContent(bodyText)
-        );
-    if (serverIconUrl) {
-        section.setThumbnailAccessory(new ThumbnailBuilder({ media: { url: serverIconUrl } }));
-    }
-    const container = new ContainerBuilder()
-        .setAccentColor(accentColor)
-        .addSectionComponents(section);
+
+    const embed = new EmbedBuilder()
+        .setColor(accentColor)
+        .setAuthor({
+            name: 'Sistema de Verificação',
+            iconURL: serverIconUrl || undefined
+        })
+        .setTitle('Sistema de Verificação')
+        .setDescription(bodyText)
+        .setTimestamp();
+
     if (bannerUrl && (bannerUrl.startsWith('http:') || bannerUrl.startsWith('https:'))) {
-        container.addMediaGalleryComponents(
-            new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(bannerUrl))
-        );
+        embed.setImage(bannerUrl);
     }
+
     const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId('start_verification')
             .setLabel('Iniciar Verificação')
             .setStyle(ButtonStyle.Secondary)
     );
+
     return {
-        components: [container, row],
-        flags: MessageFlags.IsComponentsV2
+        embeds: [embed],
+        components: [row]
     };
 }
 
 /**
- * Feedback ephemeral (sucesso/erro) para fluxos de setup — Components V2.
- * @param {Object} opts
- * @param {string} opts.title
- * @param {string} opts.description
- * @param {number} opts.accentColor
- * @returns {{ components: import('@discordjs/builders').UnknownComponent[], flags: number }}
+ * Feedback ephemeral para fluxos de setup.
  */
 export function buildSetupFeedbackV2({ title, description, accentColor }) {
-    const displays = [
-        new TextDisplayBuilder().setContent(`# ${title}`),
-        ...chunkText(description || '\u200b').map(c => new TextDisplayBuilder().setContent(c))
-    ];
-    const container = new ContainerBuilder()
-        .setAccentColor(accentColor)
-        .addTextDisplayComponents(...displays);
-    return {
-        components: [container],
-        flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2
-    };
+    const embed = new EmbedBuilder()
+        .setColor(accentColor)
+        .setTitle(title)
+        .setDescription(description || '\u200b')
+        .setTimestamp();
+    return toEmbedReply(embed, true);
 }
 
 /**
- * Converte dados de embed (JSON API Discord) para mensagem Components V2.
- * @param {Object} embedData — resultado de EmbedBuilder#toJSON() ou API embed object
- * @param {Object} [options]
- * @param {boolean} [options.ephemeral]
- * @param {string[]} [options.instructionLines] — linhas de instrução acima do cartão
- * @param {import('discord.js').ActionRowBuilder[]} [options.actionRows]
- * @param {number} [options.accentColorOverride]
- * @returns {{ components: unknown[], flags: number }}
- */
-export function buildEmbedMessageV2(embedData, options = {}) {
-    const {
-        ephemeral = false,
-        instructionLines = [],
-        actionRows = [],
-        accentColorOverride
-    } = options;
-
-    const data = embedData && typeof embedData === 'object' ? embedData : {};
-
-    let accent = accentColorOverride ?? data.color ?? DEFAULT_EMBED_ACCENT;
-    if (typeof accent === 'string') {
-        const h = accent.replace(/^#/, '');
-        accent = parseInt(h, 16);
-        if (Number.isNaN(accent)) accent = DEFAULT_EMBED_ACCENT;
-    }
-
-    const parts = [];
-
-    if (data.author?.name) {
-        let line = data.author.url
-            ? `[${data.author.name}](${data.author.url})`
-            : `**${data.author.name}**`;
-        parts.push(line);
-    }
-
-    if (data.title) {
-        parts.push(`# ${data.title}`);
-    }
-
-    if (data.description) {
-        for (const c of chunkText(data.description)) {
-            parts.push(c);
-        }
-    }
-
-    if (Array.isArray(data.fields) && data.fields.length) {
-        const fieldBlocks = [];
-        for (const f of data.fields) {
-            const name = String(f.name ?? '');
-            const value = String(f.value ?? '');
-            fieldBlocks.push(`**${name}**\n${value}`);
-        }
-        parts.push(fieldBlocks.join('\n\n'));
-    }
-
-    let footerLine = '';
-    if (data.footer?.text) {
-        footerLine = data.footer.text;
-    }
-    if (data.timestamp) {
-        const t = data.timestamp;
-        const sec = typeof t === 'string'
-            ? Math.floor(new Date(t).getTime() / 1000)
-            : Math.floor(Number(t) / (t > 1e12 ? 1000 : 1));
-        if (!Number.isNaN(sec)) {
-            footerLine = footerLine
-                ? `${footerLine} · <t:${sec}:F>`
-                : `<t:${sec}:F>`;
-        }
-    }
-    if (footerLine) {
-        parts.push(`_${footerLine}_`);
-    }
-
-    const bodyText = parts.filter(Boolean).join('\n\n') || '\u200b';
-
-    const thumbUrl = data.thumbnail?.url || data.author?.icon_url || null;
-    const imageUrl = data.image?.url || null;
-
-    /** Secções Discord limitam a 3 Text Displays; o Container aceita vários Text Displays. */
-    const bodyChunks = chunkText(bodyText);
-
-    const container = new ContainerBuilder().setAccentColor(accent);
-
-    if (thumbUrl && (thumbUrl.startsWith('http:') || thumbUrl.startsWith('https:'))) {
-        const firstChunk = bodyChunks.shift() || '\u200b';
-        const section = new SectionBuilder()
-            .addTextDisplayComponents(new TextDisplayBuilder().setContent(firstChunk))
-            .setThumbnailAccessory(new ThumbnailBuilder({ media: { url: thumbUrl } }));
-        container.addSectionComponents(section);
-        for (const c of bodyChunks) {
-            container.addTextDisplayComponents(new TextDisplayBuilder().setContent(c));
-        }
-    } else {
-        for (const c of bodyChunks) {
-            container.addTextDisplayComponents(new TextDisplayBuilder().setContent(c));
-        }
-    }
-
-    if (imageUrl && (imageUrl.startsWith('http:') || imageUrl.startsWith('https:'))) {
-        container.addMediaGalleryComponents(
-            new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(imageUrl))
-        );
-    }
-
-    /** @type {unknown[]} */
-    const components = [];
-
-    for (const line of instructionLines) {
-        for (const c of chunkText(line)) {
-            components.push(new TextDisplayBuilder().setContent(c));
-        }
-    }
-
-    components.push(container);
-
-    for (const row of actionRows) {
-        components.push(row);
-    }
-
-    let flags = MessageFlags.IsComponentsV2;
-    if (ephemeral) {
-        flags |= MessageFlags.Ephemeral;
-    }
-
-    return { components, flags };
-}
-
-/**
- * Cartão padrão do bot (substitui embeds de responseUtils) — Components V2.
- * Mesma semântica que o antigo createResponse com EmbedBuilder.
+ * Cartão padrão (EmbedBuilder) — usado por responseUtils.
  */
 export function buildStandardCardV2({
     title = '',
@@ -300,75 +180,41 @@ export function buildStandardCardV2({
 
     const accent = color || colors[type] || colors.custom;
 
-    /** @type {Record<string, unknown>} */
-    const embedData = {
-        color: accent,
-        title: titleOut,
-        description: descOut,
-        fields: validatedFields,
-        timestamp: new Date().toISOString()
-    };
+    const embed = new EmbedBuilder()
+        .setColor(accent)
+        .setTimestamp();
 
-    if (thumbnail) {
-        embedData.thumbnail = { url: thumbnail };
-    }
-    if (image) {
-        embedData.image = { url: image };
-    }
+    if (titleOut) embed.setTitle(titleOut);
+    embed.setDescription(descOut);
+    if (validatedFields?.length) embed.addFields(validatedFields);
+
+    if (thumbnail) embed.setThumbnail(thumbnail);
+    if (image) embed.setImage(image);
     if (footer) {
         if (typeof footer === 'string') {
-            embedData.footer = { text: truncateText(footer, 2048) };
+            embed.setFooter({ text: truncateText(footer, 2048) });
         } else {
-            const footerObj = { ...footer };
-            if (footerObj.text) {
-                footerObj.text = truncateText(footerObj.text, 2048);
-            }
-            if (footerObj.iconURL) {
-                footerObj.icon_url = footerObj.iconURL;
-                delete footerObj.iconURL;
-            }
-            embedData.footer = footerObj;
+            const t = footer.text ? truncateText(footer.text, 2048) : '\u200b';
+            embed.setFooter({ text: t, iconURL: footer.iconURL });
         }
     }
     if (author) {
         if (typeof author === 'string') {
-            embedData.author = { name: truncateText(author, 256) };
+            embed.setAuthor({ name: truncateText(author, 256) });
         } else {
-            const authorObj = { ...author };
-            if (authorObj.name) {
-                authorObj.name = truncateText(authorObj.name, 256);
-            }
-            if (authorObj.iconURL) {
-                authorObj.icon_url = authorObj.iconURL;
-                delete authorObj.iconURL;
-            }
-            embedData.author = authorObj;
+            embed.setAuthor({
+                name: truncateText(author.name, 256),
+                iconURL: author.iconURL,
+                url: author.url
+            });
         }
     }
 
-    return buildEmbedMessageV2(embedData, { ephemeral });
+    return toEmbedReply(embed, ephemeral);
 }
 
 /**
- * Junta um payload V2 (`components` + `flags`) com filas de botões/menus.
- * @param {{ components: unknown[], flags: number }} cardPayload
- * @param {import('discord.js').ActionRowBuilder[]} rows
- */
-export function mergeV2WithRows(cardPayload, rows) {
-    return {
-        components: [...(cardPayload.components || []), ...rows],
-        flags: cardPayload.flags
-    };
-}
-
-/**
- * Ficha de verificação no canal de staff (substitui leitura de message.embeds[0]).
- * @param {Object} opts
- * @param {import('discord.js').Guild} opts.guild
- * @param {import('discord.js').GuildMember} opts.member
- * @param {string} [opts.referralSource]
- * @param {'pending'|'approved'|'denied'} opts.status
- * @param {import('discord.js').User} [opts.staffUser] — obrigatório se status !== pending
+ * Ficha de verificação no canal de staff.
  */
 export function buildVerificationStaffMessageV2({
     guild,
@@ -395,7 +241,7 @@ export function buildVerificationStaffMessageV2({
             iconURL: guild.iconURL({ dynamic: true }) || undefined
         })
         .setTitle(isPending ? '🔍 Verificação Pendente' : `${statusEmoji} Verificação ${statusTitle}`)
-        .setDescription(`**${member.user}** solicitou verificação no servidor`)
+        .setDescription(`**<@${member.user.id}>** solicitou verificação no servidor`)
         .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
         .addFields(
             {
@@ -435,7 +281,7 @@ export function buildVerificationStaffMessageV2({
         embed.addFields(
             {
                 name: '🛠️ Processado por',
-                value: `${staffUser} (${staffUser.tag})`,
+                value: `<@${staffUser.id}> (${staffUser.tag})`,
                 inline: true
             },
             {
@@ -453,12 +299,11 @@ export function buildVerificationStaffMessageV2({
         iconURL: guild.iconURL({ dynamic: true })
     }).setTimestamp();
 
-    return buildEmbedMessageV2(embed.toJSON());
+    return embed;
 }
 
 /**
  * Ficha de whitelist no canal de staff (wl-solicitacao).
- * @param {'pending'|'approved'|'denied'} opts.status
  */
 export function buildWhitelistStaffMessageV2({
     guild,
@@ -483,7 +328,7 @@ export function buildWhitelistStaffMessageV2({
             iconURL: guild.iconURL({ dynamic: true }) || undefined
         })
         .setTitle(isPending ? '🎮 Whitelist Pendente' : `${statusEmoji} Whitelist ${statusTitle}`)
-        .setDescription(`**${member.user}** solicitou whitelist no servidor`)
+        .setDescription(`**${member.user.tag}** solicitou whitelist no servidor`)
         .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
         .addFields(
             {
@@ -528,7 +373,7 @@ export function buildWhitelistStaffMessageV2({
         embed.addFields(
             {
                 name: '🛠️ Processado por',
-                value: `${staffUser} (${staffUser.tag})`,
+                value: `<@${staffUser.id}> (${staffUser.tag})`,
                 inline: true
             },
             {
@@ -546,14 +391,5 @@ export function buildWhitelistStaffMessageV2({
         iconURL: guild.iconURL({ dynamic: true })
     }).setTimestamp();
 
-    return buildEmbedMessageV2(embed.toJSON());
-}
-
-/**
- * Converte um EmbedBuilder em payload V2 (envio em canal ou DM).
- * @param {import('discord.js').EmbedBuilder} embedBuilder
- * @param {boolean} [ephemeral]
- */
-export function toV2FromEmbedBuilder(embedBuilder, ephemeral = false) {
-    return buildEmbedMessageV2(embedBuilder.toJSON(), { ephemeral });
+    return embed;
 }

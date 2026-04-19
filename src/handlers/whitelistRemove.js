@@ -1,5 +1,5 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { mergeV2WithRows, toV2FromEmbedBuilder } from '../utils/embedBuilderV2.js';
+import { mergeEmbedWithRows, toEmbedReply } from '../utils/embedBuilderV2.js';
 
 import { database as db } from '../database/database.js';
 import { getColors, getRoleId, getChannelId, hasStaffRole } from '../utils/configHelper.js';
@@ -19,7 +19,7 @@ async function handleWhitelistRemove(interaction) {
                 .setFooter({ text: 'Permissão Negada', iconURL: interaction.guild.iconURL() })
                 .setTimestamp();
 
-            return await interaction.reply(toV2FromEmbedBuilder(embed, true));
+            return await interaction.reply(toEmbedReply(embed, true));
         }
 
         await interaction.deferReply({ ephemeral: true });
@@ -35,7 +35,7 @@ async function handleWhitelistRemove(interaction) {
                 .setFooter({ text: 'Erro', iconURL: interaction.guild.iconURL() })
                 .setTimestamp();
 
-            return await interaction.editReply(toV2FromEmbedBuilder(embed, true));
+            return await interaction.editReply(toEmbedReply(embed, true));
         }
 
         // Buscar whitelist do usuário
@@ -50,7 +50,7 @@ async function handleWhitelistRemove(interaction) {
                 .setFooter({ text: 'Aviso', iconURL: interaction.guild.iconURL() })
                 .setTimestamp();
 
-            return await interaction.editReply(toV2FromEmbedBuilder(embed, true));
+            return await interaction.editReply(toEmbedReply(embed, true));
         }
 
         // Verificar se está aprovada
@@ -68,7 +68,7 @@ async function handleWhitelistRemove(interaction) {
                 .setFooter({ text: 'Aviso', iconURL: interaction.guild.iconURL() })
                 .setTimestamp();
 
-            return await interaction.editReply(toV2FromEmbedBuilder(embed, true));
+            return await interaction.editReply(toEmbedReply(embed, true));
         }
 
         // Mostrar confirmação
@@ -112,7 +112,7 @@ async function handleWhitelistRemove(interaction) {
             );
 
         return await interaction.editReply({
-            ...mergeV2WithRows(toV2FromEmbedBuilder(confirmEmbed, true), [row])
+            ...mergeEmbedWithRows(toEmbedReply(confirmEmbed, true), [row])
         });
     } catch (error) {
         logger.error('Erro ao processar comando wl-remove', {
@@ -130,14 +130,14 @@ async function handleWhitelistRemove(interaction) {
             .setTimestamp();
 
         if (!interaction.replied && !interaction.deferred) {
-            await interaction.reply(toV2FromEmbedBuilder(errorEmbed, true)).catch(err => {
+            await interaction.reply(toEmbedReply(errorEmbed, true)).catch(err => {
                 logger.error('Erro ao responder erro de wl-remove', {
                     error: err.message,
                     userId: interaction.user?.id
                 });
             });
         } else if (interaction.deferred) {
-            await interaction.editReply(toV2FromEmbedBuilder(errorEmbed, true)).catch(err => {
+            await interaction.editReply(toEmbedReply(errorEmbed, true)).catch(err => {
                 logger.error('Erro ao editar resposta de erro de wl-remove', {
                     error: err.message,
                     userId: interaction.user?.id
@@ -175,7 +175,7 @@ export async function handleWhitelistRemoveConfirm(interaction) {
                 .setFooter({ text: 'Acesso Negado', iconURL: interaction.guild.iconURL() })
                 .setTimestamp();
 
-            return await interaction.reply(toV2FromEmbedBuilder(embed, true));
+            return await interaction.reply(toEmbedReply(embed, true));
         }
 
         // Verificar se é cancelamento
@@ -188,7 +188,7 @@ export async function handleWhitelistRemoveConfirm(interaction) {
                 .setFooter({ text: 'Cancelado', iconURL: interaction.guild.iconURL() })
                 .setTimestamp();
 
-            return await interaction.update({ ...toV2FromEmbedBuilder(embed, true), components: [] });
+            return await interaction.update({ ...toEmbedReply(embed, true), components: [] });
         }
 
         // Buscar usuário e whitelist
@@ -204,7 +204,7 @@ export async function handleWhitelistRemoveConfirm(interaction) {
                 .setFooter({ text: 'Aviso', iconURL: interaction.guild.iconURL() })
                 .setTimestamp();
 
-            return await interaction.update({ ...toV2FromEmbedBuilder(embed, true), components: [] });
+            return await interaction.update({ ...toEmbedReply(embed, true), components: [] });
         }
 
         // Deferir atualização da interação para evitar expiração enquanto processa SFTP/UUID
@@ -404,7 +404,7 @@ export async function handleWhitelistRemoveConfirm(interaction) {
         .setTimestamp();
 
         // Atualizar a mensagem original após deferUpdate
-        await interaction.editReply({ ...toV2FromEmbedBuilder(embed, true), components: [] });
+        await interaction.editReply({ ...toEmbedReply(embed, true), components: [] });
 
         // Enviar log para o canal de whitelist log se configurado
         const whitelistLogChannelId = getChannelId(interaction.guild.id, 'whitelistLog');
@@ -449,7 +449,7 @@ export async function handleWhitelistRemoveConfirm(interaction) {
                     })
                     .setTimestamp();
 
-                await whitelistLogChannel.send({ ...toV2FromEmbedBuilder(logEmbed) }).catch(error => {
+                await whitelistLogChannel.send({ ...toEmbedReply(logEmbed) }).catch(error => {
                     logger.error('Erro ao enviar log de remoção de whitelist', {
                         error: error.message,
                         guildId: interaction.guild.id,
@@ -483,14 +483,14 @@ export async function handleWhitelistRemoveConfirm(interaction) {
             .setTimestamp();
 
         if (!interaction.replied && !interaction.deferred) {
-            await interaction.reply(toV2FromEmbedBuilder(errorEmbed, true)).catch(err => {
+            await interaction.reply(toEmbedReply(errorEmbed, true)).catch(err => {
                 logger.error('Erro ao responder erro ao remover whitelist', {
                     error: err.message,
                     userId: interaction.user?.id
                 });
             });
         } else if (interaction.deferred) {
-            await interaction.editReply(toV2FromEmbedBuilder(errorEmbed, true)).catch(err => {
+            await interaction.editReply(toEmbedReply(errorEmbed, true)).catch(err => {
                 logger.error('Erro ao editar resposta de erro ao remover whitelist', {
                     error: err.message,
                     userId: interaction.user?.id

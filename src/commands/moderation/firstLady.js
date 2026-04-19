@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
 import { database as db } from '../../database/database.js';
-import { mergeV2WithRows } from '../../utils/embedBuilderV2.js';
+import { mergeEmbedWithRows } from '../../utils/embedBuilderV2.js';
 import { success, error, warning, info } from '../../utils/responseUtils.js';
 import logger from '../../utils/logger.js';
 import { getRoleId } from '../../utils/configHelper.js';
@@ -405,7 +405,7 @@ async function handleGiveFirstLady(interaction) {
         );
     
     // Enviar mensagem de confirmação
-    await interaction.reply(mergeV2WithRows(confirmEmbed, [confirmRow]));
+    await interaction.reply(mergeEmbedWithRows(confirmEmbed, [confirmRow]));
     
     // Buscar a mensagem de confirmação
     const confirmationMessage = await interaction.fetchReply();
@@ -861,7 +861,7 @@ async function showRemoveConfirmation(interaction, guild, giverId, targetMember,
     let confirmationMessage;
     if (interaction.replied || interaction.deferred) {
         // Se já foi respondida, usar editReply
-        await interaction.editReply(mergeV2WithRows(confirmEmbed, [confirmRow]));
+        await interaction.editReply(mergeEmbedWithRows(confirmEmbed, [confirmRow]));
         // Buscar a mensagem atualizada
         try {
             if (interaction.fetchReply && typeof interaction.fetchReply === 'function') {
@@ -887,7 +887,7 @@ async function showRemoveConfirmation(interaction, guild, giverId, targetMember,
         }
     } else {
         // Primeira resposta, usar reply
-        await interaction.reply(mergeV2WithRows(confirmEmbed, [confirmRow]));
+        await interaction.reply(mergeEmbedWithRows(confirmEmbed, [confirmRow]));
         confirmationMessage = await interaction.fetchReply();
     }
     

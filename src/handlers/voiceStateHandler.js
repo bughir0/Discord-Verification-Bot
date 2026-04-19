@@ -1,5 +1,5 @@
 import { EmbedBuilder } from 'discord.js';
-import { toV2FromEmbedBuilder } from '../utils/embedBuilderV2.js';
+import { toEmbedReply } from '../utils/embedBuilderV2.js';
 import { getChannelId } from '../utils/configHelper.js';
 import logger from '../utils/logger.js';
 
@@ -122,7 +122,7 @@ export async function handleVoiceStateUpdate(oldState, newState) {
         
         const membersCount = membersAlreadyInChannel.length;
         const membersList = membersCount > 0 
-            ? membersAlreadyInChannel.map(m => `• ${m.tag}`).join('\n')
+            ? membersAlreadyInChannel.map(m => `• <@${m.id}>`).join('\n')
             : 'Ninguém mais no canal';
         
         const embed = new EmbedBuilder()
@@ -132,7 +132,7 @@ export async function handleVoiceStateUpdate(oldState, newState) {
                 iconURL: guild.iconURL({ dynamic: true }) || undefined 
             })
             .setTitle(`🔊 ${member.user.username} entrou na call`)
-            .setDescription(`**${member.user.tag}** conectou-se ao canal de voz`)
+            .setDescription(`**${member.user}** conectou-se ao canal de voz`)
             .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
             .addFields(
                 { 
@@ -157,7 +157,7 @@ export async function handleVoiceStateUpdate(oldState, newState) {
             })
             .setTimestamp();
 
-            await logChannel.send({ ...toV2FromEmbedBuilder(embed), allowedMentions: { parse: [] } }).catch(err => {
+            await logChannel.send({ ...toEmbedReply(embed) }).catch(err => {
                 logger.error('Erro ao enviar log de entrada em call', {
                     error: err.message,
                     guildId: guild.id,
@@ -215,7 +215,7 @@ export async function handleVoiceStateUpdate(oldState, newState) {
                 : [];
             
             const membersList = membersInChannelAtExit.length > 0 
-                ? membersInChannelAtExit.map(m => `• ${m.tag}`).join('\n')
+                ? membersInChannelAtExit.map(m => `• <@${m.id}>`).join('\n')
                 : 'Ninguém mais no canal';
             
             const embed = new EmbedBuilder()
@@ -226,8 +226,8 @@ export async function handleVoiceStateUpdate(oldState, newState) {
                 })
                 .setTitle(`🔇 ${member.user.username} saiu da call${memberStillInGuild ? '' : ' e do servidor'}`)
                 .setDescription(memberStillInGuild 
-                    ? `**${member.user.tag}** desconectou-se do canal de voz`
-                    : `**${member.user.tag}** saiu do servidor enquanto estava em call`)
+                    ? `**${member.user}** desconectou-se do canal de voz`
+                    : `**${member.user}** saiu do servidor enquanto estava em call`)
                 .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
                 .addFields(
                     { 
@@ -257,7 +257,7 @@ export async function handleVoiceStateUpdate(oldState, newState) {
                 voiceSessions.delete(member.id);
             }
             
-            await logChannel.send({ ...toV2FromEmbedBuilder(embed), allowedMentions: { parse: [] } }).catch(err => {
+            await logChannel.send({ ...toEmbedReply(embed) }).catch(err => {
                 logger.error('Erro ao enviar log de saída de call', {
                     error: err.message,
                     guildId: guild.id,
@@ -293,7 +293,7 @@ export async function handleVoiceStateUpdate(oldState, newState) {
             : [];
 
         const membersList = membersInChannelAtExit.length > 0 
-            ? membersInChannelAtExit.map(m => `• ${m.tag}`).join('\n')
+            ? membersInChannelAtExit.map(m => `• <@${m.id}>`).join('\n')
             : 'Ninguém mais no canal';
 
         const embed = new EmbedBuilder()
@@ -304,8 +304,8 @@ export async function handleVoiceStateUpdate(oldState, newState) {
             })
             .setTitle(`🔇 ${member.user.username} saiu da call${memberStillInGuild ? '' : ' e do servidor'}`)
             .setDescription(memberStillInGuild 
-                ? `**${member.user.tag}** desconectou-se do canal de voz`
-                : `**${member.user.tag}** saiu do servidor enquanto estava em call`)
+                ? `**${member.user}** desconectou-se do canal de voz`
+                : `**${member.user}** saiu do servidor enquanto estava em call`)
             .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
             .addFields(
                 { 
@@ -338,7 +338,7 @@ export async function handleVoiceStateUpdate(oldState, newState) {
             // Limpar sessão
             voiceSessions.delete(member.id);
             
-            await logChannel.send({ ...toV2FromEmbedBuilder(embed), allowedMentions: { parse: [] } }).catch(err => {
+            await logChannel.send({ ...toEmbedReply(embed) }).catch(err => {
                 logger.error('Erro ao enviar log de saída de call', {
                     error: err.message,
                     guildId: guild.id,
@@ -395,7 +395,7 @@ export async function handleVoiceStateUpdate(oldState, newState) {
         
         const membersCount = membersAlreadyInChannel.length;
         const membersList = membersCount > 0 
-            ? membersAlreadyInChannel.map(m => `• ${m.tag}`).join('\n')
+            ? membersAlreadyInChannel.map(m => `• <@${m.id}>`).join('\n')
             : 'Ninguém mais no canal';
         
         const embed = new EmbedBuilder()
@@ -405,7 +405,7 @@ export async function handleVoiceStateUpdate(oldState, newState) {
                 iconURL: guild.iconURL({ dynamic: true }) || undefined 
             })
             .setTitle(`🔄 ${member.user.username} trocou de call`)
-            .setDescription(`**${member.user.tag}** mudou de canal de voz`)
+            .setDescription(`**${member.user}** mudou de canal de voz`)
             .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
             .addFields(
                 { 
@@ -430,7 +430,7 @@ export async function handleVoiceStateUpdate(oldState, newState) {
             })
             .setTimestamp();
 
-            await logChannel.send({ ...toV2FromEmbedBuilder(embed), allowedMentions: { parse: [] } }).catch(err => {
+            await logChannel.send({ ...toEmbedReply(embed) }).catch(err => {
                 logger.error('Erro ao enviar log de troca de call', {
                     error: err.message,
                     guildId: guild.id,

@@ -1,6 +1,5 @@
 import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
 import { database as db } from '../../database/database.js';
-import { buildEmbedMessageV2 } from '../../utils/embedBuilderV2.js';
 import { getBaseRows, stripHintContent, ensureEmbedContent } from '../../handlers/embedBuilder.js';
 
 export const data = new SlashCommandBuilder()
@@ -40,14 +39,11 @@ export async function handleCreateEmbedCommand(interaction) {
     const working = stripHintContent(EmbedBuilder.from(baseEmbed));
     ensureEmbedContent(working);
 
-    const payload = buildEmbedMessageV2(working.toJSON(), {
-        ephemeral: true,
-        instructionLines: ['Utilize os botões abaixo para editar a embed.'],
-        actionRows: getBaseRows()
-    });
-
     const reply = await interaction.reply({
-        ...payload,
+        content: 'Utilize os botões abaixo para editar a embed.',
+        embeds: [working],
+        components: getBaseRows(),
+        ephemeral: true,
         fetchReply: true
     });
 

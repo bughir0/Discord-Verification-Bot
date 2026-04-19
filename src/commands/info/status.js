@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
-import { toV2FromEmbedBuilder } from '../../utils/embedBuilderV2.js';
+import { toEmbedReply } from '../../utils/embedBuilderV2.js';
 import { getColors } from '../../utils/configHelper.js';
 import os from 'os';
 
@@ -81,6 +81,6 @@ export async function handleStatusCommand(interaction) {
         })
         .setTimestamp();
 
-    await interaction.reply(toV2FromEmbedBuilder(embed, true));
+    await interaction.reply(toEmbedReply(embed, true));
 }
 

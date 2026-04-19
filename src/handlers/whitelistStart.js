@@ -7,7 +7,7 @@ import {
     ButtonBuilder,
     ButtonStyle
 } from 'discord.js';
-import { mergeV2WithRows, toV2FromEmbedBuilder } from '../utils/embedBuilderV2.js';
+import { mergeEmbedWithRows, toEmbedReply } from '../utils/embedBuilderV2.js';
 import { database as db } from '../database/database.js';
 import { getColors } from '../utils/configHelper.js';
 
@@ -50,7 +50,7 @@ async function handleWhitelistStart(interaction) {
             })
             .setTimestamp();
         
-        return await interaction.reply(toV2FromEmbedBuilder(embed, true));
+        return await interaction.reply(toEmbedReply(embed, true));
     }
     
     const member = interaction.member;
@@ -94,9 +94,9 @@ async function handleWhitelistStart(interaction) {
             .setTimestamp();
 
         if (!interaction.replied && !interaction.deferred) {
-            return interaction.reply(toV2FromEmbedBuilder(embed, true));
+            return interaction.reply(toEmbedReply(embed, true));
         } else {
-            return interaction.editReply(toV2FromEmbedBuilder(embed, true));
+            return interaction.editReply(toEmbedReply(embed, true));
         }
     }
     
@@ -130,10 +130,10 @@ async function handleWhitelistStart(interaction) {
 
         // First reply to the interaction if not already done
         if (!interaction.replied && !interaction.deferred) {
-            return interaction.reply(toV2FromEmbedBuilder(embed, true)).catch(err => console.error('Error sending already whitelisted message:', err));
+            return interaction.reply(toEmbedReply(embed, true)).catch(err => console.error('Error sending already whitelisted message:', err));
         } else {
             // If already replied or deferred, use editReply
-            return interaction.editReply(toV2FromEmbedBuilder(embed, true)).catch(err => console.error('Error updating already whitelisted message:', err));
+            return interaction.editReply(toEmbedReply(embed, true)).catch(err => console.error('Error updating already whitelisted message:', err));
         }
     }
         
@@ -180,7 +180,7 @@ async function handleWhitelistStart(interaction) {
             );
 
         await interaction.reply({
-            ...mergeV2WithRows(toV2FromEmbedBuilder(embed, true), [row])
+            ...mergeEmbedWithRows(toEmbedReply(embed, true), [row])
         });
         return; // Successfully showed the platform selection
     } catch (modalError) {
@@ -193,9 +193,9 @@ async function handleWhitelistStart(interaction) {
                 .setTitle('❌ Erro')
                 .setDescription('Não foi possível abrir o formulário de whitelist. Por favor, tente novamente.');
             if (interaction.replied || interaction.deferred) {
-                await interaction.editReply(toV2FromEmbedBuilder(modalErr, true));
+                await interaction.editReply(toEmbedReply(modalErr, true));
             } else {
-                await interaction.reply(toV2FromEmbedBuilder(modalErr, true));
+                await interaction.reply(toEmbedReply(modalErr, true));
             }
         } catch (replyError) {
             console.error('Failed to send error message:', replyError);
@@ -207,7 +207,7 @@ async function handleWhitelistStart(interaction) {
                         .setColor(colors.danger)
                         .setTitle('❌ Erro na Whitelist')
                         .setDescription('Ocorreu um erro ao processar sua solicitação de whitelist. Por favor, tente novamente mais tarde.');
-                    await interaction.member.send({ ...toV2FromEmbedBuilder(dmErr) });
+                    await interaction.member.send({ ...toEmbedReply(dmErr) });
                 }
             } catch (dmError) {
                 console.error('Failed to send DM:', dmError);

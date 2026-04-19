@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
-import { toV2FromEmbedBuilder } from '../../utils/embedBuilderV2.js';
+import { toEmbedReply } from '../../utils/embedBuilderV2.js';
 import { getColors } from '../../utils/configHelper.js';
 
 export const data = new SlashCommandBuilder()
@@ -63,7 +63,7 @@ export async function handleHelpCommand(interaction) {
         })
         .setTimestamp();
 
-    await interaction.reply(toV2FromEmbedBuilder(embed, true));
+    await interaction.reply(toEmbedReply(embed, true));
 }
 
 async function showCommandHelp(interaction, command, colors) {
@@ -152,6 +152,6 @@ async function showCommandHelp(interaction, command, colors) {
         })
         .setTimestamp();
 
-    await interaction.reply(toV2FromEmbedBuilder(embed, true));
+    await interaction.reply(toEmbedReply(embed, true));
 }
 

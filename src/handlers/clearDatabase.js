@@ -1,6 +1,6 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { database as db } from '../database/database.js';
-import { mergeV2WithRows, toV2FromEmbedBuilder } from '../utils/embedBuilderV2.js';
+import { mergeEmbedWithRows, toEmbedReply } from '../utils/embedBuilderV2.js';
 import { getColors } from '../utils/configHelper.js';
 import logger from '../utils/logger.js';
 
@@ -16,7 +16,7 @@ async function handleClearDatabase(interaction) {
                 .setFooter({ text: 'Permissão Negada', iconURL: interaction.guild.iconURL() })
                 .setTimestamp();
 
-            return interaction.reply(toV2FromEmbedBuilder(embed, true));
+            return interaction.reply(toEmbedReply(embed, true));
         }
 
         // Criar botões de confirmação
@@ -44,7 +44,7 @@ async function handleClearDatabase(interaction) {
             });
 
         await interaction.reply({
-            ...mergeV2WithRows(toV2FromEmbedBuilder(embed, true), [row])
+            ...mergeEmbedWithRows(toEmbedReply(embed, true), [row])
         });
 
         // Coletor de interação para os botões
@@ -62,7 +62,7 @@ async function handleClearDatabase(interaction) {
                     .setColor(colors.success);
                 
                 await i.update({
-                    ...toV2FromEmbedBuilder(successEmbed, true),
+                    ...toEmbedReply(successEmbed, true),
                     components: []
                 });
             } else {
@@ -72,7 +72,7 @@ async function handleClearDatabase(interaction) {
                     .setColor(colors.warning);
                 
                 await i.update({
-                    ...toV2FromEmbedBuilder(cancelEmbed, true),
+                    ...toEmbedReply(cancelEmbed, true),
                     components: []
                 });
             }
@@ -86,7 +86,7 @@ async function handleClearDatabase(interaction) {
                     .setColor(colors.warning);
                 
                 interaction.editReply({
-                    ...toV2FromEmbedBuilder(timeoutEmbed, true),
+                    ...toEmbedReply(timeoutEmbed, true),
                     components: []
                 }).catch(console.error);
             }
@@ -108,9 +108,9 @@ async function handleClearDatabase(interaction) {
             .setTimestamp();
 
         if (interaction.replied || interaction.deferred) {
-            await interaction.editReply(toV2FromEmbedBuilder(errorEmbed, true)).catch(console.error);
+            await interaction.editReply(toEmbedReply(errorEmbed, true)).catch(console.error);
         } else {
-            await interaction.reply(toV2FromEmbedBuilder(errorEmbed, true)).catch(console.error);
+            await interaction.reply(toEmbedReply(errorEmbed, true)).catch(console.error);
         }
     }
 }

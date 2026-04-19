@@ -5,7 +5,7 @@ import {
     TextInputStyle,
     EmbedBuilder
 } from 'discord.js';
-import { mergeV2WithRows, toV2FromEmbedBuilder } from '../utils/embedBuilderV2.js';
+import { mergeEmbedWithRows, toEmbedReply } from '../utils/embedBuilderV2.js';
 import { getColors } from '../utils/configHelper.js';
 import logger from '../utils/logger.js';
 
@@ -49,7 +49,7 @@ async function handleWhitelistPlatform(interaction) {
                 .setFooter({ text: 'Erro', iconURL: interaction.guild.iconURL() })
                 .setTimestamp();
 
-            return await interaction.reply(toV2FromEmbedBuilder(embed, true));
+            return await interaction.reply(toEmbedReply(embed, true));
         }
 
         // Validar plataforma
@@ -105,9 +105,9 @@ async function handleWhitelistPlatform(interaction) {
 
         try {
             if (interaction.replied || interaction.deferred) {
-                await interaction.editReply(toV2FromEmbedBuilder(errorEmbed, true));
+                await interaction.editReply(toEmbedReply(errorEmbed, true));
             } else {
-                await interaction.reply(toV2FromEmbedBuilder(errorEmbed, true));
+                await interaction.reply(toEmbedReply(errorEmbed, true));
             }
         } catch (replyError) {
             logger.error('Erro ao enviar mensagem de erro', {

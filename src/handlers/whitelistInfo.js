@@ -1,6 +1,6 @@
 import { EmbedBuilder } from 'discord.js';
 import { database as db } from '../database/database.js';
-import { toV2FromEmbedBuilder } from '../utils/embedBuilderV2.js';
+import { toEmbedReply } from '../utils/embedBuilderV2.js';
 import { getColors } from '../utils/configHelper.js';
 import logger from '../utils/logger.js';
 
@@ -25,7 +25,7 @@ export async function handleWhitelistInfo(interaction) {
                 })
                 .setTimestamp();
 
-            return await interaction.editReply(toV2FromEmbedBuilder(embed, true));
+            return await interaction.editReply(toEmbedReply(embed, true));
         }
 
         const platformIcon = whitelist.platform === 'bedrock' ? '🔷' : '☕';
@@ -83,7 +83,7 @@ export async function handleWhitelistInfo(interaction) {
             })
             .setTimestamp();
 
-        return await interaction.editReply(toV2FromEmbedBuilder(embed, true));
+        return await interaction.editReply(toEmbedReply(embed, true));
     } catch (error) {
         logger.error('Erro ao buscar informações de whitelist', {
             error: error.message,

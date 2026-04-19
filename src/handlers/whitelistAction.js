@@ -1,7 +1,7 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { database as db } from '../database/database.js';
 import { getChannelId, getRoleId, getColors, hasStaffRole } from '../utils/configHelper.js';
-import { buildWhitelistStaffMessageV2, toV2FromEmbedBuilder } from '../utils/embedBuilderV2.js';
+import { buildWhitelistStaffMessageV2, mergeEmbedWithRows, toEmbedReply } from '../utils/embedBuilderV2.js';
 import { error as errorResponse } from '../utils/responseUtils.js';
 import logger from '../utils/logger.js';
 import { getMinecraftUUID } from '../utils/minecraftUtils.js';
@@ -155,8 +155,8 @@ async function handleWhitelistAction(interaction) {
                         .setTimestamp();
 
                     const message = await whitelistResultChannel.send({
-                        content: member.toString(),
-                        ...toV2FromEmbedBuilder(denialEmbed)
+                        ...mergeEmbedWithRows(denialEmbed, [], { content: `${member}` }),
+                        allowedMentions: { users: [member.id] }
                     });
 
                     // Deletar a mensagem após 5 minutos
@@ -351,8 +351,8 @@ async function handleWhitelistAction(interaction) {
                         .setTimestamp();
 
                     const message = await whitelistResultChannel.send({
-                        content: `🎉 ${member}`,
-                        ...toV2FromEmbedBuilder(approvalEmbed)
+                        ...mergeEmbedWithRows(approvalEmbed, [], { content: `🎉 ${member}` }),
+                        allowedMentions: { users: [member.id] }
                     });
 
                     // Deletar a mensagem após 5 minutos
@@ -468,7 +468,7 @@ async function handleWhitelistAction(interaction) {
                         },
                         {
                             name: '🛠️ Processado por',
-                            value: `${staffMember} (${staffMember.tag})`,
+                            value: `<@${staffMember.id}> (${staffMember.tag})`,
                             inline: true
                         },
                         {
@@ -484,7 +484,7 @@ async function handleWhitelistAction(interaction) {
                     .setTimestamp();
                     
                 // Enviar mensagem de log (sem auto-deleção)
-                await whitelistLogChannel.send({ ...toV2FromEmbedBuilder(logEmbed) }).catch(error => {
+                await whitelistLogChannel.send({ ...toEmbedReply(logEmbed) }).catch(error => {
                     logger.error('Erro ao enviar log de whitelist', {
                         error: error.message,
                         guildId: interaction.guild.id,
@@ -525,7 +525,7 @@ async function handleWhitelistAction(interaction) {
                                 staffUser: staffMember
                             });
                             await message.edit({
-                                ...updatedCard,
+                                embeds: [updatedCard],
                                 components: []
                             });
                         }

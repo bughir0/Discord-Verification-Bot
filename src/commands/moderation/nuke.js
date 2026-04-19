@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, ChannelType } from 'discord.js';
-import { toV2FromEmbedBuilder } from '../../utils/embedBuilderV2.js';
+import { toEmbedReply } from '../../utils/embedBuilderV2.js';
 import { success, error } from '../../utils/responseUtils.js';
 import logger from '../../utils/logger.js';
 
@@ -164,7 +164,7 @@ export async function handleNukeCommand(interaction) {
 
         // Enviar mensagem no novo canal
         const nukeMessage = await newChannel.send({
-            ...toV2FromEmbedBuilder(adminEmbed)
+            ...toEmbedReply(adminEmbed)
         });
 
         // Deletar a mensagem após 1 minuto (60000ms)

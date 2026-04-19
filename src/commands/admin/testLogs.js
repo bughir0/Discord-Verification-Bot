@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
-import { toV2FromEmbedBuilder } from '../../utils/embedBuilderV2.js';
+import { toEmbedReply } from '../../utils/embedBuilderV2.js';
 import { getChannelId } from '../../utils/configHelper.js';
 import { success, error, info } from '../../utils/responseUtils.js';
 import logger from '../../utils/logger.js';
@@ -102,7 +102,7 @@ export async function handleTestLogsCommand(interaction) {
                 .setFooter({ text: 'Teste realizado por ' + interaction.user.tag })
                 .setTimestamp();
 
-            await channel.send({ ...toV2FromEmbedBuilder(testEmbed) });
+            await channel.send({ ...toEmbedReply(testEmbed) });
             
             results.push({
                 name: channelInfo.name,

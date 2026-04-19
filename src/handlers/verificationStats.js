@@ -1,6 +1,6 @@
 import { EmbedBuilder } from 'discord.js';
 import { database as db } from '../database/database.js';
-import { toV2FromEmbedBuilder } from '../utils/embedBuilderV2.js';
+import { toEmbedReply } from '../utils/embedBuilderV2.js';
 import { getColors } from '../utils/configHelper.js';
 
 async function handleVerificationStats(interaction) {
@@ -56,7 +56,7 @@ async function handleVerificationStats(interaction) {
             })
             .setTimestamp();
         
-        await interaction.editReply(toV2FromEmbedBuilder(embed, true));
+        await interaction.editReply(toEmbedReply(embed, true));
         
     } catch (error) {
         console.error('Error in verification stats:', error);
@@ -72,9 +72,9 @@ async function handleVerificationStats(interaction) {
             .setTimestamp();
             
         if (!interaction.replied && !interaction.deferred) {
-            await interaction.reply(toV2FromEmbedBuilder(errorEmbed, true)).catch(console.error);
+            await interaction.reply(toEmbedReply(errorEmbed, true)).catch(console.error);
         } else if (interaction.deferred) {
-            await interaction.editReply(toV2FromEmbedBuilder(errorEmbed, true)).catch(console.error);
+            await interaction.editReply(toEmbedReply(errorEmbed, true)).catch(console.error);
         }
     }
 }

@@ -1,7 +1,7 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { database as db } from '../database/database.js';
-import { getChannelId, getRoleId, getColors, getStaffMentions } from '../utils/configHelper.js';
-import { buildVerificationStaffMessageV2, mergeV2WithRows, toV2FromEmbedBuilder } from '../utils/embedBuilderV2.js';
+import { getChannelId, getRoleId, getColors, getStaffMentions, getStaffRoleIds } from '../utils/configHelper.js';
+import { buildVerificationStaffMessageV2, mergeEmbedWithRows, toEmbedReply } from '../utils/embedBuilderV2.js';
 import logger from '../utils/logger.js';
 
 async function handleVerificationModal(interaction) {
@@ -41,10 +41,10 @@ async function handleVerificationModal(interaction) {
                 .setDescription('O sistema de verificação está temporariamente desativado. Entre em contato com um administrador para mais informações.');
             
             if (!alreadyAcknowledged) {
-                return await interaction.editReply(toV2FromEmbedBuilder(errorEmbed, true)).catch(console.error);
+                return await interaction.editReply(toEmbedReply(errorEmbed, true)).catch(console.error);
             } else {
                 return await interaction.followUp({ 
-                    ...toV2FromEmbedBuilder(errorEmbed, true)
+                    ...toEmbedReply(errorEmbed, true)
                 }).catch(console.error);
             }
         }
@@ -60,11 +60,11 @@ async function handleVerificationModal(interaction) {
                 .setDescription('Por favor, forneça um nome de referência válido.');
             
             if (!alreadyAcknowledged) {
-                return await interaction.editReply(toV2FromEmbedBuilder(errorEmbed, true)).catch(console.error);
+                return await interaction.editReply(toEmbedReply(errorEmbed, true)).catch(console.error);
             } else {
                 // Se já foi reconhecida, tenta enviar uma nova mensagem
                 return await interaction.followUp({ 
-                    ...toV2FromEmbedBuilder(errorEmbed, true)
+                    ...toEmbedReply(errorEmbed, true)
                 }).catch(console.error);
             }
         }
@@ -89,10 +89,10 @@ async function handleVerificationModal(interaction) {
                 .setTimestamp();
             
             if (!alreadyAcknowledged) {
-                return await interaction.editReply(toV2FromEmbedBuilder(errorEmbed, true)).catch(console.error);
+                return await interaction.editReply(toEmbedReply(errorEmbed, true)).catch(console.error);
             } else {
                 return await interaction.followUp({ 
-                    ...toV2FromEmbedBuilder(errorEmbed, true)
+                    ...toEmbedReply(errorEmbed, true)
                 }).catch(console.error);
             }
         }
@@ -140,11 +140,11 @@ async function handleVerificationModal(interaction) {
 
             try {
                 if (!alreadyAcknowledged) {
-                    await interaction.editReply(toV2FromEmbedBuilder(successEmbed, true));
+                    await interaction.editReply(toEmbedReply(successEmbed, true));
                 } else {
                     // Se já foi reconhecida, tenta enviar uma nova mensagem
                     await interaction.followUp({
-                        ...toV2FromEmbedBuilder(successEmbed, true)
+                        ...toEmbedReply(successEmbed, true)
                     });
                 }
             } catch (error) {
@@ -166,7 +166,7 @@ async function handleVerificationModal(interaction) {
                 .setTitle('❌ Erro')
                 .setDescription('Ocorreu um erro ao processar sua verificação. Por favor, tente novamente mais tarde.');
                 
-            return await interaction.editReply(toV2FromEmbedBuilder(errorEmbed, true)).catch(console.error);
+            return await interaction.editReply(toEmbedReply(errorEmbed, true)).catch(console.error);
         }
         
         // Enviar mensagem no canal de notificações de verificação
@@ -212,8 +212,10 @@ async function handleVerificationModal(interaction) {
                     const botMember = interaction.guild.members.me;
                     if (botMember && notificationChannel.permissionsFor(botMember)?.has(['SendMessages', 'EmbedLinks', 'ViewChannel'])) {
                         await notificationChannel.send({
-                            content: `${staffMention} Nova verificação pendente!`,
-                            ...mergeV2WithRows(staffCard, [row])
+                            ...mergeEmbedWithRows(staffCard, [row], {
+                                content: `${staffMention} Nova verificação pendente!`
+                            }),
+                            allowedMentions: { roles: getStaffRoleIds(interaction.guild.id) }
                         });
                         
                         logger.info('Notificação de verificação enviada', {
@@ -263,10 +265,10 @@ async function handleVerificationModal(interaction) {
 
         try {
             if (interaction.replied || interaction.deferred) {
-                await interaction.editReply(toV2FromEmbedBuilder(errorEmbed, true)).catch(console.error);
+                await interaction.editReply(toEmbedReply(errorEmbed, true)).catch(console.error);
             } else {
                 await interaction.reply({
-                    ...toV2FromEmbedBuilder(errorEmbed, true)
+                    ...toEmbedReply(errorEmbed, true)
                 }).catch(console.error);
             }
         } catch (replyError) {

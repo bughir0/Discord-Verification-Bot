@@ -1,5 +1,5 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { mergeV2WithRows, toV2FromEmbedBuilder } from '../utils/embedBuilderV2.js';
+import { mergeEmbedWithRows, toEmbedReply } from '../utils/embedBuilderV2.js';
 
 import { database as db } from '../database/database.js';
 import { getColors, hasStaffRole } from '../utils/configHelper.js';
@@ -18,7 +18,7 @@ async function handleWhitelistClear(interaction) {
                 .setFooter({ text: 'Permissão Negada', iconURL: interaction.guild.iconURL() })
                 .setTimestamp();
 
-            return await interaction.reply(toV2FromEmbedBuilder(embed, true));
+            return await interaction.reply(toEmbedReply(embed, true));
         }
 
         await interaction.deferReply({ ephemeral: true });
@@ -37,7 +37,7 @@ async function handleWhitelistClear(interaction) {
                 .setFooter({ text: 'Aviso', iconURL: interaction.guild.iconURL() })
                 .setTimestamp();
 
-            return await interaction.editReply(toV2FromEmbedBuilder(embed, true));
+            return await interaction.editReply(toEmbedReply(embed, true));
         }
 
         // Mostrar confirmação
@@ -76,7 +76,7 @@ async function handleWhitelistClear(interaction) {
             );
 
         return await interaction.editReply({
-            ...mergeV2WithRows(toV2FromEmbedBuilder(confirmEmbed, true), [row])
+            ...mergeEmbedWithRows(toEmbedReply(confirmEmbed, true), [row])
         });
     } catch (error) {
         logger.error('Erro ao processar comando wl-clear', {
@@ -94,9 +94,9 @@ async function handleWhitelistClear(interaction) {
             .setTimestamp();
 
         if (!interaction.replied && !interaction.deferred) {
-            await interaction.reply(toV2FromEmbedBuilder(errorEmbed, true)).catch(console.error);
+            await interaction.reply(toEmbedReply(errorEmbed, true)).catch(console.error);
         } else if (interaction.deferred) {
-            await interaction.editReply(toV2FromEmbedBuilder(errorEmbed, true)).catch(console.error);
+            await interaction.editReply(toEmbedReply(errorEmbed, true)).catch(console.error);
         }
     }
 }
@@ -128,7 +128,7 @@ async function handleWhitelistClearConfirm(interaction) {
                 .setFooter({ text: 'Acesso Negado', iconURL: interaction.guild.iconURL() })
                 .setTimestamp();
 
-            return await interaction.reply(toV2FromEmbedBuilder(embed, true));
+            return await interaction.reply(toEmbedReply(embed, true));
         }
 
         // Verificar se é cancelamento
@@ -141,7 +141,7 @@ async function handleWhitelistClearConfirm(interaction) {
                 .setFooter({ text: 'Cancelado', iconURL: interaction.guild.iconURL() })
                 .setTimestamp();
 
-            return await interaction.update({ ...toV2FromEmbedBuilder(embed, true), components: [] });
+            return await interaction.update({ ...toEmbedReply(embed, true), components: [] });
         }
 
         // Contar quantas whitelists existem antes de limpar
@@ -223,7 +223,7 @@ async function handleWhitelistClearConfirm(interaction) {
         })
         .setTimestamp();
 
-        await interaction.update({ ...toV2FromEmbedBuilder(embed, true), components: [] });
+        await interaction.update({ ...toEmbedReply(embed, true), components: [] });
 
         // Enviar log para o canal de whitelist log se configurado
         const { getChannelId } = await import('../utils/configHelper.js');
@@ -269,7 +269,7 @@ async function handleWhitelistClearConfirm(interaction) {
                     })
                     .setTimestamp();
 
-                await whitelistLogChannel.send({ ...toV2FromEmbedBuilder(logEmbed) }).catch(error => {
+                await whitelistLogChannel.send({ ...toEmbedReply(logEmbed) }).catch(error => {
                     logger.error('Erro ao enviar log de limpeza de whitelist', {
                         error: error.message,
                         guildId: interaction.guild.id,
@@ -303,9 +303,9 @@ async function handleWhitelistClearConfirm(interaction) {
             .setTimestamp();
 
         if (!interaction.replied && !interaction.deferred) {
-            await interaction.reply(toV2FromEmbedBuilder(errorEmbed, true)).catch(console.error);
+            await interaction.reply(toEmbedReply(errorEmbed, true)).catch(console.error);
         } else if (interaction.deferred) {
-            await interaction.editReply(toV2FromEmbedBuilder(errorEmbed, true)).catch(console.error);
+            await interaction.editReply(toEmbedReply(errorEmbed, true)).catch(console.error);
         }
     }
 }
