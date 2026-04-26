@@ -79,18 +79,18 @@ export function buildVerificationMessageV2({
     guild,
     client
 }) {
-    const serverIconUrl = guild.iconURL({ extension: 'png', size: 256 })
-        || (client?.user?.displayAvatarURL && client.user.displayAvatarURL({ extension: 'png', size: 256 }));
+    const serverIconUrl = guild.iconURL({ dynamic: true, size: 256 })
+        || (client?.user?.displayAvatarURL && client.user.displayAvatarURL({ dynamic: true, size: 256 }));
 
     const embed = new EmbedBuilder()
         .setColor(accentColor)
-        .setAuthor({
-            name: 'Sistema de Verificação',
-            iconURL: serverIconUrl || undefined
-        })
         .setTitle('Sistema de Verificação')
         .setDescription(bodyText)
         .setTimestamp();
+
+    if (serverIconUrl) {
+        embed.setThumbnail(serverIconUrl);
+    }
 
     if (bannerUrl && (bannerUrl.startsWith('http:') || bannerUrl.startsWith('https:'))) {
         embed.setImage(bannerUrl);
